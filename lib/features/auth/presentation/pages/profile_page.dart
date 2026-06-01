@@ -589,7 +589,7 @@ class ProfilePage extends ConsumerWidget {
   Future<void> _importHabits(BuildContext context, WidgetRef ref) async {
     try {
       // 1. Buka File Picker bawaan OS untuk menyaring berkas .csv
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['csv'],
       );
