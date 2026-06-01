@@ -30,6 +30,16 @@ dependencies:
   # Google Sign In Authentication
   google_sign_in: ^6.2.1
 
+
+  # File selection
+  file_picker: ^11.0.0
+
+  # Sharing/saving files
+  share_plus: ^10.1.4
+
+  # Path Provider
+  path_provider: ^2.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

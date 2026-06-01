@@ -1,7 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import '../../../../core/errors/failure.dart';
+import '../../../../core/utils/csv_habit_helper.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../habits/domain/entities/habit.dart';
+import '../../../habits/presentation/controllers/habit_list_controller.dart';
 import '../../domain/entities/app_user.dart';
 import '../controllers/auth_controller.dart';
 
@@ -37,13 +45,16 @@ class ProfilePage extends ConsumerWidget {
           ),
         ),
         error: (error, _) => _buildErrorScreen(context, ref, error.toString()),
-        data: (user) => _buildProfileContent(context, ref, user),
+        data: (user) {
+          final habits = ref.watch(habitListProvider).valueOrNull ?? [];
+          return _buildProfileContent(context, ref, user, habits);
+        },
       ),
     );
   }
 
   /// Membangun antarmuka konten profil utama
-  Widget _buildProfileContent(BuildContext context, WidgetRef ref, AppUser user) {
+  Widget _buildProfileContent(BuildContext context, WidgetRef ref, AppUser user, List<Habit> habits) {
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
@@ -188,7 +199,12 @@ class ProfilePage extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 24),
+
+          // 2.5. Cadangan Data Lokal (.xml) Ekspor & Impor
+          _buildBackupSection(context, ref, habits),
+
+          const SizedBox(height: 32),
 
           // 3. Tombol Aksi Autentikasi Utama
           if (user.isGuest) ...[
@@ -438,5 +454,191 @@ class ProfilePage extends ConsumerWidget {
         );
       },
     );
+  }
+
+  /// Membangun kartu cadangan lokal untuk melakukan ekspor & impor CSV
+  Widget _buildBackupSection(BuildContext context, WidgetRef ref, List<Habit> habits) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xff1a1d24),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xff2e3342),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.table_chart_outlined, color: AppTheme.statusSkipped, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Cadangan Data Lokal',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: Color(0xffe2e8f0),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Ekspor atau impor data kebiasaan Dailio Anda secara mandiri menggunakan file format .csv (Excel).',
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xff94a3b8),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              // Tombol Ekspor
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _exportHabits(context, habits),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.accentPrimary,
+                      side: const BorderSide(color: Color(0xff2e3342)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.upload_outlined, size: 16),
+                    label: const Text(
+                      'Ekspor (.csv)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              
+              // Tombol Impor
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _importHabits(context, ref),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accentPrimary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.download_outlined, size: 16),
+                    label: const Text(
+                      'Impor (.csv)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Proses mengekspor habit lokal ke file CSV dan membagikannya via Share Sheet
+  Future<void> _exportHabits(BuildContext context, List<Habit> habits) async {
+    if (habits.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda belum memiliki kebiasaan aktif untuk diekspor.'),
+          backgroundColor: AppTheme.statusSkipped,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // 1. Generate konten CSV
+      final csvString = CsvHabitHelper.habitsToCsv(habits);
+
+      // 2. Simpan di direktori temporer HP
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/dailio_habits_backup.csv');
+      await file.writeAsString(csvString);
+
+      // 3. Share file CSV menggunakan Share Sheet native OS
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Dailio Habits Backup (.csv)',
+        text: 'Berikut adalah file backup daftar kebiasaan Dailio saya! 🌱',
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengekspor data: $e'),
+          backgroundColor: AppTheme.statusMissed,
+        ),
+      );
+    }
+  }
+
+  /// Proses mengimpor file CSV dari storage lokal dan memasukkannya ke database SQLite
+  Future<void> _importHabits(BuildContext context, WidgetRef ref) async {
+    try {
+      // 1. Buka File Picker bawaan OS untuk menyaring berkas .csv
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+      );
+
+      if (result == null || result.files.single.path == null) {
+        // Proses dibatalkan oleh user
+        return;
+      }
+
+      // 2. Baca isi file CSV
+      final file = File(result.files.single.path!);
+      final csvContent = await file.readAsString();
+
+      // 3. Parsing CSV ke List<Habit>
+      final importedHabits = CsvHabitHelper.csvToHabits(csvContent);
+
+      if (importedHabits.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('File CSV kosong atau tidak sesuai dengan format ekspor Dailio.'),
+            backgroundColor: AppTheme.statusSkipped,
+          ),
+        );
+        return;
+      }
+
+      // 4. Masukkan ke dalam SQLite menggunakan controller HabitList secara paralel/sekuensial
+      int successCount = 0;
+      for (final habit in importedHabits) {
+        final res = await ref.read(habitListProvider.notifier).addHabit(habit);
+        if (res is Success<void>) {
+          successCount++;
+        }
+      }
+
+      // 5. Beri feedback visual SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Berhasil memulihkan $successCount dari ${importedHabits.length} kebiasaan! 🎉'),
+          backgroundColor: AppTheme.statusDone,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengimpor data. Pastikan format CSV sesuai.\nError: $e'),
+          backgroundColor: AppTheme.statusMissed,
+        ),
+      );
+    }
   }
 }
