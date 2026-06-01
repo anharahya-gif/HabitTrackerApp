@@ -1,0 +1,52 @@
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# run from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  # The project rules can be customized in this file.
+  # There are many additional lints you can opt into. A list of all available lints
+  # and their explanations is available at https://dart.dev/tools/linter-rules.
+  #
+  # Instead of disabling a lint rule for the entire project in the
+  # section below, it can also be suppressed for a single line of code
+  # or a specific file by using the `// ignore: ` template or the
+  # `// ignore_for_file: ` template respectively.
+  #
+  # For more information, see https://dart.dev/occultech/lints
+  rules:
+    # Production-ready lints
+    always_declare_return_types: true
+    avoid_empty_else: true
+    avoid_relative_lib_imports: true
+    avoid_shadowing_type_parameters: true
+    avoid_types_as_parameter_names: true
+    await_only_futures: true
+    camel_case_extensions: true
+    camel_case_types: true
+    curly_braces_in_flow_control_structures: true
+    empty_catches: true
+    file_names: true
+    hash_and_equals: true
+    no_duplicate_case_values: true
+    non_constant_identifier_names: true
+    prefer_conditional_assignment: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_is_empty: true
+    prefer_is_not_empty: true
+    prefer_iterable_whereType: true
+    prefer_single_quotes: true
+    unnecessary_const: true
+    unnecessary_new: true
+    unnecessary_null_aware_assignments: true
+    unnecessary_nullable_for_final_variable_declarations: true
+    unnecessary_string_interpolations: true
+    use_build_context_synchronously: true
+    valid_regexps: true
