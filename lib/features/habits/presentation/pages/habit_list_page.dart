@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../shared/theme/app_theme.dart';
+import '../../../auth/domain/entities/app_user.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/habit_list_controller.dart';
 import '../widgets/habit_item_widget.dart';
 
@@ -12,6 +15,8 @@ class HabitListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final habitsAsync = ref.watch(habitListProvider);
+    final authState = ref.watch(authStateProvider);
+    final user = authState.valueOrNull ?? AppUser.guest;
 
     return Scaffold(
       body: SafeArea(
@@ -34,7 +39,7 @@ class HabitListPage extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Halo, Pejuang Habit!',
+                                user.isGuest ? 'Halo, Pejuang Habit!' : 'Halo, ${user.displayName}!',
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -48,19 +53,47 @@ class HabitListPage extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          // Premium Profile Icon / Settings Placeholder
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                                width: 1,
+                          // Premium Profile Icon / Settings reaktif ke Google OAuth
+                          GestureDetector(
+                            onTap: () => context.push('/profile'),
+                            child: authState.maybeWhen(
+                              data: (user) {
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: user.isAuthenticated 
+                                          ? AppTheme.statusDone 
+                                          : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: const Color(0xff1a1d24),
+                                    backgroundImage: user.photoUrl != null 
+                                        ? NetworkImage(user.photoUrl!) 
+                                        : null,
+                                    child: user.photoUrl == null
+                                        ? const Icon(Icons.person_outline, size: 20)
+                                        : null,
+                                  ),
+                                );
+                              },
+                              orElse: () => Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: Colors.transparent,
+                                  child: Icon(Icons.person_outline, size: 20),
+                                ),
                               ),
-                            ),
-                            child: const CircleAvatar(
-                              radius: 20,
-                              backgroundColor: Colors.transparent,
-                              child: Icon(Icons.person_outline),
                             ),
                           )
                         ],

@@ -4,6 +4,7 @@ import '../features/habits/presentation/pages/add_habit_page.dart';
 import '../features/habits/presentation/pages/habit_detail_page.dart';
 import '../features/habits/presentation/pages/habit_list_page.dart';
 import '../features/habits/presentation/pages/splash_page.dart';
+import '../features/auth/presentation/pages/profile_page.dart';
 
 /// Konfigurasi navigasi global menggunakan go_router.
 /// Menyediakan rute:
@@ -11,6 +12,7 @@ import '../features/habits/presentation/pages/splash_page.dart';
 /// - `/home` (Halaman utama daftar habit)
 /// - `/add-habit` (Form tambah habit baru)
 /// - `/habit/:id` (Halaman detail habit dengan parameter ID dinamis)
+/// - `/profile` (Halaman profil pengguna reaktif)
 class AppRouter {
   AppRouter._();
 
@@ -45,6 +47,13 @@ class AppRouter {
         builder: (BuildContext context, GoRouterState state) {
           final habitId = state.pathParameters['id'] ?? '';
           return HabitDetailPage(habitId: habitId);
+        },
+      ),
+      GoRoute(
+        path: '/profile',
+        name: 'profile',
+        builder: (BuildContext context, GoRouterState state) {
+          return const ProfilePage();
         },
       ),
     ],
