@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Habit Tracker App',
+      title: 'Dailio',
       debugShowCheckedModeBanner: false,
       
       // Integrasi Tema Premium Light & Dark Mode

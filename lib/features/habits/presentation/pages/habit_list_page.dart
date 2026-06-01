@@ -41,7 +41,7 @@ class HabitListPage extends ConsumerWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Habit Tracker',
+                                'Dailio',
                                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                                       letterSpacing: -0.5,
                                     ),

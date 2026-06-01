@@ -34,5 +34,19 @@ dev_dependencies:
   # Linter
   flutter_lints: ^3.0.0
 
+  # Launcher Icons Generator
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/Logo.png"
+  adaptive_icon_background: "#111318" # Warna background gelap tema Dailio
+  adaptive_icon_foreground: "assets/images/Logo.png"
+
 flutter:
   uses-material-design: true
+
+  # Untuk menambahkan aset seperti logo dan gambar
+  assets:
+    - assets/images/

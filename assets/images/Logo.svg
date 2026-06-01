@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Definitions for Gradients and Shadows -->
+  <defs>
+    <!-- Background Radial Gradient -->
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1A1D24" />
+      <stop offset="100%" stop-color="#111318" />
+    </radialGradient>
+    
+    <!-- Linear Gradient for Circle (Blue to Emerald Green) -->
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5AA9FF" />   <!-- Dailio Blue -->
+      <stop offset="100%" stop-color="#4ADE80" />  <!-- Dailio Emerald Green -->
+    </linearGradient>
+
+    <!-- Linear Gradient for Leaf -->
+    <linearGradient id="leafGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4ADE80" />
+      <stop offset="100%" stop-color="#A7F3D0" />  <!-- Soft Mint -->
+    </linearGradient>
+
+    <!-- Drop Shadow for elements -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Base Dark Canvas Background (Fully rounded for premium app icon shape) -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGradient)" />
+
+  <!-- Outer Ring (Circle of Journey) -->
+  <circle cx="256" cy="256" r="160" stroke="url(#primaryGradient)" stroke-width="16" fill="none" stroke-linecap="round" filter="url(#shadow)" opacity="0.9" />
+
+  <!-- Inner Checkmark & Leaf Composition -->
+  <g filter="url(#shadow)" transform="translate(10, 0)">
+    <!-- Stylized Checkmark Stem -->
+    <path d="M165 265 L225 325 C225 325 285 245 325 185" 
+          stroke="url(#primaryGradient)" 
+          stroke-width="24" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" 
+          fill="none" />
+
+    <!-- Stylized Leaf (Connecting to the Checkmark) -->
+    <!-- The leaf grows upward and to the right, showing growth -->
+    <path d="M310 195 C335 155 385 135 385 135 C385 135 375 185 335 210 C315 222 295 215 295 215 C295 215 295 205 310 195 Z" 
+          fill="url(#leafGradient)" />
+          
+    <!-- Center Leaf Vein -->
+    <path d="M302 205 Q335 180 375 145" 
+          stroke="#111318" 
+          stroke-width="4" 
+          stroke-linecap="round" 
+          fill="none" 
+          opacity="0.3" />
+  </g>
+</svg>
