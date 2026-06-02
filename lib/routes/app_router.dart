@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../features/habits/presentation/pages/add_habit_page.dart';
+import '../features/habits/presentation/pages/edit_habit_page.dart';
 import '../features/habits/presentation/pages/habit_detail_page.dart';
 import '../features/habits/presentation/pages/habit_list_page.dart';
 import '../features/habits/presentation/pages/splash_page.dart';
@@ -47,6 +48,14 @@ class AppRouter {
         builder: (BuildContext context, GoRouterState state) {
           final habitId = state.pathParameters['id'] ?? '';
           return HabitDetailPage(habitId: habitId);
+        },
+      ),
+      GoRoute(
+        path: '/edit-habit/:id',
+        name: 'edit_habit',
+        builder: (BuildContext context, GoRouterState state) {
+          final habitId = state.pathParameters['id'] ?? '';
+          return EditHabitPage(habitId: habitId);
         },
       ),
       GoRoute(

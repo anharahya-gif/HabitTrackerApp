@@ -51,6 +51,24 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
     return result;
   }
 
+  /// Memperbarui data habit dan menyegarkan tampilan.
+  Future<Result<void>> updateHabit(Habit habit) async {
+    final updateHabitUsecase = ref.read(updateHabitProvider);
+    final result = await updateHabitUsecase(habit);
+
+    if (result is Success<void>) {
+      // Jadwalkan ulang atau batalkan notifikasi sesuai reminderTime terbaru
+      if (habit.reminderTime != null && !habit.isArchived) {
+        await NotificationService.scheduleHabitNotification(habit);
+      } else {
+        await NotificationService.cancelHabitNotification(habit.id);
+      }
+      await refresh();
+      _triggerBackgroundSync();
+    }
+    return result;
+  }
+
   /// Menghapus habit permanen berdasarkan ID.
   Future<Result<void>> removeHabit(String id) async {
     final deleteHabitUsecase = ref.read(deleteHabitProvider);

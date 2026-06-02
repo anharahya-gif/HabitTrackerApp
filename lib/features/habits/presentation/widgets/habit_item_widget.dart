@@ -100,6 +100,31 @@ class HabitItemWidget extends ConsumerWidget {
                                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
+                                  if (habit.reminderTime != null) ...[
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '•',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Icon(
+                                      Icons.access_time_rounded,
+                                      size: 11,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      habit.reminderTime!,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ],

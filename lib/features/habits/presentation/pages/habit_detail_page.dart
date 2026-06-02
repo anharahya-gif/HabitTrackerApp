@@ -26,6 +26,13 @@ class HabitDetailPage extends ConsumerWidget {
           onPressed: () => context.pop(),
         ),
         actions: [
+          // Opsi Edit Habit
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () {
+              context.push('/edit-habit/$habitId');
+            },
+          ),
           // Opsi Hapus Habit
           IconButton(
             icon: const Icon(Icons.delete_outline, color: AppTheme.statusMissed),
@@ -101,6 +108,78 @@ class HabitDetailPage extends ConsumerWidget {
                               Text(
                                 habit.description ?? 'Tidak ada deskripsi.',
                                 style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  // Category Badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      habit.category,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // Frequency Badge
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      habit.type == 'daily' ? 'Harian' : 'Mingguan',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  if (habit.reminderTime != null) ...[
+                                    const SizedBox(width: 8),
+                                    // Reminder Time Badge
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.statusSkipped.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: AppTheme.statusSkipped.withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.access_time_rounded,
+                                            size: 14,
+                                            color: AppTheme.statusSkipped,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            habit.reminderTime!,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: AppTheme.statusSkipped,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
