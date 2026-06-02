@@ -21,7 +21,9 @@ class NotificationService {
     try {
       final String timeZoneName = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(timeZoneName));
+      debugPrint('NotificationService: Local timezone initialized to: $timeZoneName');
     } catch (e) {
+      debugPrint('NotificationService: Failed to detect local timezone ($e), falling back to UTC.');
       // Fallback ke UTC jika gagal mendeteksi timezone lokal
       tz.setLocalLocation(tz.getLocation('UTC'));
     }
