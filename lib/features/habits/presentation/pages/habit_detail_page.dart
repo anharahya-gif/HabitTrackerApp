@@ -338,6 +338,7 @@ class _CalendarHistoryGrid extends StatefulWidget {
 
 class _CalendarHistoryGridState extends State<_CalendarHistoryGrid> {
   late DateTime _currentMonth;
+  bool _isExpanded = false;
 
   @override
   void initState() {
@@ -429,6 +430,7 @@ class _CalendarHistoryGridState extends State<_CalendarHistoryGrid> {
                     onPressed: () {
                       setState(() {
                         _currentMonth = DateTime(year, month - 1, 1);
+                        _isExpanded = false;
                       });
                     },
                   ),
@@ -437,6 +439,7 @@ class _CalendarHistoryGridState extends State<_CalendarHistoryGrid> {
                     onPressed: () {
                       setState(() {
                         _currentMonth = DateTime(year, month + 1, 1);
+                        _isExpanded = false;
                       });
                     },
                   ),
@@ -625,6 +628,9 @@ class _CalendarHistoryGridState extends State<_CalendarHistoryGrid> {
 
             if (completedLogs.isEmpty) return const SizedBox.shrink();
 
+            final totalCompleted = completedLogs.length;
+            final displayCount = _isExpanded ? totalCompleted : (totalCompleted > 5 ? 5 : totalCompleted);
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -652,7 +658,7 @@ class _CalendarHistoryGridState extends State<_CalendarHistoryGrid> {
                 ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: completedLogs.length,
+                  itemCount: displayCount,
                   separatorBuilder: (context, index) => Divider(
                     height: 1,
                     color: Theme.of(context).dividerColor.withOpacity(0.05),
@@ -712,6 +718,33 @@ class _CalendarHistoryGridState extends State<_CalendarHistoryGrid> {
                     );
                   },
                 ),
+                if (totalCompleted > 5) ...[
+                  const SizedBox(height: 12),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _isExpanded = !_isExpanded;
+                        });
+                      },
+                      icon: Icon(
+                        _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      label: Text(
+                        _isExpanded
+                            ? 'Sembunyikan'
+                            : 'Lihat Lebih Banyak (${totalCompleted - 5})',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             );
           }(),
