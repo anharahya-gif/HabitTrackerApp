@@ -98,6 +98,19 @@ class SyncService {
       final remoteLogs = await _remoteDS.fetchRemoteHabitLogs(userId);
       print('📥 [SYNC] Ditemukan ${remoteLogs.length} log di Cloud Firestore.');
       for (final remoteLog in remoteLogs) {
+        // Validasi keberadaan habit parent di SQLite lokal demi menjaga integritas Foreign Key
+        final parentHabit = await _localHabitDS.getHabitById(remoteLog.habitId);
+        if (parentHabit == null) {
+          print('   ⚠️ Menemukan log yatim piatu (parent habit ${remoteLog.habitId} tidak ditemukan di lokal).');
+          try {
+            await _remoteDS.deleteRemoteHabitLog(userId, remoteLog.id);
+            print('   🧹 Log yatim piatu (${remoteLog.id}) berhasil dibersihkan dari Cloud.');
+          } catch (e) {
+            print('   ❌ Gagal membersihkan log yatim piatu (${remoteLog.id}) dari Cloud: $e');
+          }
+          continue;
+        }
+
         final localLog = await _localLogDS.getLogForHabitAndDate(
           remoteLog.habitId,
           remoteLog.date,
