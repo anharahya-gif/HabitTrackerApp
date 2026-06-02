@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,13 +8,31 @@ import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/habit_list_controller.dart';
 import '../widgets/habit_item_widget.dart';
 
+/// Provider reaktif untuk memperbarui jam setiap 10 detik secara background
+final currentTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
+  final controller = StreamController<DateTime>();
+  controller.add(DateTime.now());
+
+  final timer = Timer.periodic(const Duration(seconds: 10), (_) {
+    if (!controller.isClosed) {
+      controller.add(DateTime.now());
+    }
+  });
+
+  ref.onDispose(() {
+    timer.cancel();
+    controller.close();
+  });
+
+  return controller.stream;
+});
+
 /// Halaman utama (Home Screen) menampilkan daftar Habit aktif.
 /// Menyediakan pull-to-refresh, ringkasan statistik sederhana, dan tombol tambah habit baru.
 class HabitListPage extends ConsumerWidget {
   const HabitListPage({super.key});
 
-  String _formatCurrentDate() {
-    final now = DateTime.now();
+  String _formatCurrentDate(DateTime now) {
     final weekdays = [
       'Senin',
       'Selasa',
@@ -40,7 +59,9 @@ class HabitListPage extends ConsumerWidget {
 
     final dayName = weekdays[now.weekday - 1];
     final monthName = months[now.month - 1];
-    return '$dayName, ${now.day} $monthName ${now.year}';
+    final hour = now.hour.toString().padLeft(2, '0');
+    final minute = now.minute.toString().padLeft(2, '0');
+    return '$dayName, ${now.day} $monthName ${now.year} • $hour:$minute';
   }
 
   @override
@@ -48,6 +69,10 @@ class HabitListPage extends ConsumerWidget {
     final habitsAsync = ref.watch(filteredHabitsProvider);
     final authState = ref.watch(authControllerProvider);
     final user = authState.valueOrNull ?? AppUser.guest;
+    
+    // Watch provider jam real-time
+    final currentTimeAsync = ref.watch(currentTimeProvider);
+    final currentDateTime = currentTimeAsync.valueOrNull ?? DateTime.now();
 
     return Scaffold(
       body: SafeArea(
@@ -103,7 +128,7 @@ class HabitListPage extends ConsumerWidget {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      _formatCurrentDate(),
+                                      _formatCurrentDate(currentDateTime),
                                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                             color: Theme.of(context).colorScheme.primary,
                                             fontWeight: FontWeight.w600,
