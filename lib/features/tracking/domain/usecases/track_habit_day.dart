@@ -46,6 +46,8 @@ class TrackHabitDay implements UseCase<HabitStreak, TrackHabitParams> {
         date: params.date,
         status: params.status,
         completedAt: params.status == 'done' ? DateTime.now() : null,
+        isSynced: false,
+        updatedAt: DateTime.now(),
       );
 
       // 2. Simpan log harian

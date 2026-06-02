@@ -15,7 +15,7 @@ class HabitListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final habitsAsync = ref.watch(habitListProvider);
-    final authState = ref.watch(authStateProvider);
+    final authState = ref.watch(authControllerProvider);
     final user = authState.valueOrNull ?? AppUser.guest;
 
     return Scaffold(

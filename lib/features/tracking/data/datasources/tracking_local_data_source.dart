@@ -21,6 +21,8 @@ class TrackingLocalDataSource {
       date: '2026-05-31',
       status: 'done',
       completedAt: DateTime.now().subtract(const Duration(days: 1)),
+      isSynced: true,
+      updatedAt: DateTime.now(),
     ),
     HabitLogModel(
       id: 'mock-1_2026-05-30',
@@ -28,6 +30,8 @@ class TrackingLocalDataSource {
       date: '2026-05-30',
       status: 'done',
       completedAt: DateTime.now().subtract(const Duration(days: 2)),
+      isSynced: true,
+      updatedAt: DateTime.now(),
     ),
     HabitLogModel(
       id: 'mock-1_2026-05-29',
@@ -35,6 +39,8 @@ class TrackingLocalDataSource {
       date: '2026-05-29',
       status: 'done',
       completedAt: DateTime.now().subtract(const Duration(days: 3)),
+      isSynced: true,
+      updatedAt: DateTime.now(),
     ),
 
     // Logs Membaca Buku (Kemarin skip, 2 hari lalu done)
@@ -43,6 +49,8 @@ class TrackingLocalDataSource {
       habitId: 'mock-2',
       date: '2026-05-31',
       status: 'skipped',
+      isSynced: true,
+      updatedAt: DateTime.now(),
     ),
     HabitLogModel(
       id: 'mock-2_2026-05-30',
@@ -50,6 +58,8 @@ class TrackingLocalDataSource {
       date: '2026-05-30',
       status: 'done',
       completedAt: DateTime.now().subtract(const Duration(days: 2)),
+      isSynced: true,
+      updatedAt: DateTime.now(),
     ),
   ];
 
@@ -168,6 +178,50 @@ class TrackingLocalDataSource {
       }
     } catch (e) {
       throw DatabaseException('Gagal menghapus log harian.', e);
+    }
+  }
+
+  /// Mengambil daftar log yang belum tersinkronisasi (is_synced = 0).
+  Future<List<HabitLogModel>> getUnsyncedLogs() async {
+    if (kIsWeb) {
+      return _webLogs.where((l) => !l.isSynced).toList();
+    }
+
+    try {
+      final db = await _dbHelper.database;
+      final List<Map<String, dynamic>> maps = await db.query(
+        'habit_logs',
+        where: 'is_synced = ?',
+        whereArgs: [0],
+      );
+      return maps.map((map) => HabitLogModel.fromSqlMap(map)).toList();
+    } catch (e) {
+      throw DatabaseException('Gagal mengambil daftar log yang belum tersinkronisasi.', e);
+    }
+  }
+
+  /// Menandai status sinkronisasi log lokal menjadi tersinkronisasi (is_synced = 1).
+  Future<void> markLogAsSynced(String id) async {
+    if (kIsWeb) {
+      final index = _webLogs.indexWhere((l) => l.id == id);
+      if (index != -1) {
+        _webLogs[index] = HabitLogModel.fromEntity(
+          _webLogs[index].copyWith(isSynced: true),
+        );
+      }
+      return;
+    }
+
+    try {
+      final db = await _dbHelper.database;
+      await db.update(
+        'habit_logs',
+        {'is_synced': 1},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      throw DatabaseException('Gagal menandai sinkronisasi log di SQLite.', e);
     }
   }
 }

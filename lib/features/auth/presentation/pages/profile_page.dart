@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +13,7 @@ import '../../../habits/domain/entities/habit.dart';
 import '../../../habits/presentation/controllers/habit_list_controller.dart';
 import '../../domain/entities/app_user.dart';
 import '../controllers/auth_controller.dart';
+import '../../../../shared/providers.dart';
 
 /// Halaman Profil Pengguna Dailio berdesain premium.
 /// Mendukung login Google reaktif, keluar akun, info sinkronisasi SQLite lokal,
@@ -193,6 +195,64 @@ class ProfilePage extends ConsumerWidget {
                           height: 1.4,
                         ),
                       ),
+                      if (user.isAuthenticated) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 36,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Sedang menyelaraskan data dengan cloud...'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                              try {
+                                await ref.read(syncServiceProvider).syncData(user.id);
+                                
+                                // Refresh data lokal di UI setelah sukses ditarik/unggah
+                                ref.read(habitListProvider.notifier).refresh();
+                                
+                                // Invalidate semua streak & log provider agar UI terupdate
+                                final habits = ref.read(habitListProvider).valueOrNull ?? [];
+                                for (final h in habits) {
+                                  ref.invalidate(habitStreakProvider(h.id));
+                                  ref.invalidate(habitTodayLogProvider(h.id));
+                                }
+
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Sinkronisasi sukses! Data aman di cloud. 🌱'),
+                                    backgroundColor: AppTheme.statusDone,
+                                  ),
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Gagal sinkronisasi: $e'),
+                                    backgroundColor: AppTheme.statusMissed,
+                                  ),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.statusDone.withOpacity(0.15),
+                              foregroundColor: AppTheme.statusDone,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                            ),
+                            icon: const Icon(Icons.sync, size: 16),
+                            label: const Text(
+                              'Sinkronkan Sekarang',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -224,23 +284,7 @@ class ProfilePage extends ConsumerWidget {
                   ),
                   elevation: 2,
                 ),
-                icon: Container(
-                  width: 22,
-                  height: 22,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    'G',
-                    style: TextStyle(
-                      fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w900,
-                      color: Colors.redAccent,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
+                icon: const GoogleLogoIcon(size: 20),
                 label: const Text(
                   'Hubungkan Akun Google',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
@@ -641,4 +685,136 @@ class ProfilePage extends ConsumerWidget {
       );
     }
   }
+}
+
+/// Widget Kustom Logo Google Presisi Tinggi demi Keunggulan Visual
+class GoogleLogoIcon extends StatelessWidget {
+  final double size;
+
+  const GoogleLogoIcon({super.key, this.size = 20.0});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: const _GoogleLogoPainter(),
+      ),
+    );
+  }
+}
+
+class _GoogleLogoPainter extends CustomPainter {
+  const _GoogleLogoPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+    final double r = w / 2;
+    final double cx = r;
+    final double cy = r;
+
+    final double outerRadius = r;
+    final double innerRadius = outerRadius * 0.58;
+    final double thickness = outerRadius - innerRadius;
+
+    final paint = Paint()
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+
+    Path getRingSector(double startAngle, double sweepAngle) {
+      final path = Path();
+      // Outer arc
+      path.addArc(
+        Rect.fromCircle(center: Offset(cx, cy), radius: outerRadius),
+        startAngle,
+        sweepAngle,
+      );
+      final double endAngle = startAngle + sweepAngle;
+      // Line to inner arc
+      path.lineTo(
+        cx + innerRadius * math.cos(endAngle),
+        cy + innerRadius * math.sin(endAngle),
+      );
+      // Inner arc (reversed)
+      path.arcTo(
+        Rect.fromCircle(center: Offset(cx, cy), radius: innerRadius),
+        endAngle,
+        -sweepAngle,
+        false,
+      );
+      path.close();
+      return path;
+    }
+
+    // Google Logo Colors
+    const Color blue = Color(0xFF4285F4);
+    const Color red = Color(0xFFEA4335);
+    const Color yellow = Color(0xFFFBBC05);
+    const Color green = Color(0xFF34A853);
+
+    // 1. Red (Top Segment)
+    paint.color = red;
+    canvas.drawPath(
+      getRingSector(
+        -140 * math.pi / 180,
+        105 * math.pi / 180,
+      ),
+      paint,
+    );
+
+    // 2. Yellow (Left Segment)
+    paint.color = yellow;
+    canvas.drawPath(
+      getRingSector(
+        135 * math.pi / 180,
+        85 * math.pi / 180,
+      ),
+      paint,
+    );
+
+    // 3. Green (Bottom Segment)
+    paint.color = green;
+    canvas.drawPath(
+      getRingSector(
+        45 * math.pi / 180,
+        90 * math.pi / 180,
+      ),
+      paint,
+    );
+
+    // 4. Blue (Right Segment & Bar)
+    paint.color = blue;
+    final Path bluePath = Path();
+    
+    // Blue upper arc: -35 to 0 degrees
+    bluePath.addPath(
+      getRingSector(
+        -35 * math.pi / 180,
+        35 * math.pi / 180,
+      ),
+      Offset.zero,
+    );
+
+    // Blue lower arc: 0 to 45 degrees
+    bluePath.addPath(
+      getRingSector(
+        0 * math.pi / 180,
+        45 * math.pi / 180,
+      ),
+      Offset.zero,
+    );
+
+    // Horizontal bar: y = cy to cy + thickness, x = cx to cx + outerRadius
+    bluePath.addRect(
+      Rect.fromLTRB(cx, cy - 0.2, cx + outerRadius, cy + thickness),
+    );
+
+    canvas.drawPath(bluePath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

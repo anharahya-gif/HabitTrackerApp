@@ -4,6 +4,7 @@ import '../../../../shared/providers.dart';
 import '../../../habits/presentation/controllers/habit_detail_controller.dart';
 import '../../../habits/presentation/controllers/habit_list_controller.dart';
 import '../../domain/usecases/track_habit_day.dart';
+import '../../../auth/presentation/controllers/auth_controller.dart';
 
 /// State untuk proses tracking harian.
 sealed class TrackingState {
@@ -61,6 +62,14 @@ class TrackingController extends AutoDisposeNotifier<TrackingState> {
         // 3. Segarkan provider family individu secara reaktif
         ref.invalidate(habitStreakProvider(habitId));
         ref.invalidate(habitTodayLogProvider(habitId));
+
+        // 4. Sinkronisasi perubahan status harian ke cloud secara otomatis
+        final authState = ref.read(authControllerProvider);
+        authState.whenData((user) {
+          if (user.isAuthenticated) {
+            ref.read(syncServiceProvider).syncData(user.id).catchError((_) {});
+          }
+        });
 
         return Success(streak);
       },

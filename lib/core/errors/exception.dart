@@ -18,3 +18,14 @@ class CacheException implements Exception {
   @override
   String toString() => 'CacheException: $message';
 }
+
+/// Eksepsi kustom untuk merepresentasikan kesalahan pada data layer cloud (e.g. Firebase).
+class ServerException implements Exception {
+  final String message;
+  final Object? originalException;
+
+  const ServerException(this.message, [this.originalException]);
+
+  @override
+  String toString() => 'ServerException: $message (${originalException ?? ''})';
+}

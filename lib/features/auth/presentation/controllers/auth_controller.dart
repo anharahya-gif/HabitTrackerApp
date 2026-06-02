@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../../../shared/providers.dart';
+import '../../../tracking/data/services/sync_service.dart';
+import '../../../habits/presentation/controllers/habit_list_controller.dart';
 
 /// Provider singleton untuk repositori autentikasi
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -17,8 +20,10 @@ final authStateProvider = StreamProvider<AppUser>((ref) {
 /// Controller StateNotifier untuk memproses status login/logout pengguna beserta loading state.
 class AuthController extends StateNotifier<AsyncValue<AppUser>> {
   final AuthRepository _authRepository;
+  final SyncService _syncService;
+  final Ref _ref;
 
-  AuthController(this._authRepository) : super(const AsyncValue.data(AppUser.guest)) {
+  AuthController(this._authRepository, this._syncService, this._ref) : super(const AsyncValue.data(AppUser.guest)) {
     _fetchActiveUser();
   }
 
@@ -26,7 +31,20 @@ class AuthController extends StateNotifier<AsyncValue<AppUser>> {
   Future<void> _fetchActiveUser() async {
     final activeRes = await _authRepository.getActiveUser();
     activeRes.fold(
-      onSuccess: (user) => state = AsyncValue.data(user),
+      onSuccess: (user) {
+        state = AsyncValue.data(user);
+        if (user.isAuthenticated) {
+          _syncService.syncData(user.id).then((_) {
+            _ref.read(habitListProvider.notifier).refresh().then((_) {
+              final habits = _ref.read(habitListProvider).valueOrNull ?? [];
+              for (final h in habits) {
+                _ref.invalidate(habitStreakProvider(h.id));
+                _ref.invalidate(habitTodayLogProvider(h.id));
+              }
+            }).catchError((_) {});
+          }).catchError((_) {});
+        }
+      },
       onFailure: (_) => state = const AsyncValue.data(AppUser.guest),
     );
   }
@@ -39,6 +57,17 @@ class AuthController extends StateNotifier<AsyncValue<AppUser>> {
     res.fold(
       onSuccess: (user) {
         state = AsyncValue.data(user);
+        if (user.isAuthenticated) {
+          _syncService.syncData(user.id).then((_) {
+            _ref.read(habitListProvider.notifier).refresh().then((_) {
+              final habits = _ref.read(habitListProvider).valueOrNull ?? [];
+              for (final h in habits) {
+                _ref.invalidate(habitStreakProvider(h.id));
+                _ref.invalidate(habitTodayLogProvider(h.id));
+              }
+            }).catchError((_) {});
+          }).catchError((_) {});
+        }
       },
       onFailure: (fail) {
         state = AsyncValue.error(fail.message, StackTrace.current);
@@ -54,6 +83,8 @@ class AuthController extends StateNotifier<AsyncValue<AppUser>> {
     res.fold(
       onSuccess: (_) {
         state = const AsyncValue.data(AppUser.guest);
+        // Segarkan data lokal di UI agar kembali bersih ke Guest Mode
+        _ref.read(habitListProvider.notifier).refresh().catchError((_) {});
       },
       onFailure: (fail) {
         state = AsyncValue.error(fail.message, StackTrace.current);
@@ -64,5 +95,9 @@ class AuthController extends StateNotifier<AsyncValue<AppUser>> {
 
 /// Provider global untuk memicu aksi autentikasi dari UI layer
 final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<AppUser>>((ref) {
-  return AuthController(ref.watch(authRepositoryProvider));
+  return AuthController(
+    ref.watch(authRepositoryProvider),
+    ref.watch(syncServiceProvider),
+    ref,
+  );
 });

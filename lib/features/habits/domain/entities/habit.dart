@@ -9,6 +9,8 @@ class Habit {
   final bool isArchived;
   final String? reminderTime; // e.g. '08:00'
   final int color; // Nilai integer warna ARGB (e.g. 0xFF4CAF50)
+  final bool isSynced;
+  final DateTime? updatedAt;
 
   const Habit({
     required this.id,
@@ -20,6 +22,8 @@ class Habit {
     this.isArchived = false,
     this.reminderTime,
     required this.color,
+    this.isSynced = false,
+    this.updatedAt,
   });
 
   /// Menggandakan entitas dengan perubahan properti tertentu.
@@ -33,6 +37,8 @@ class Habit {
     bool? isArchived,
     String? reminderTime,
     int? color,
+    bool? isSynced,
+    DateTime? updatedAt,
   }) {
     return Habit(
       id: id ?? this.id,
@@ -44,6 +50,8 @@ class Habit {
       isArchived: isArchived ?? this.isArchived,
       reminderTime: reminderTime ?? this.reminderTime,
       color: color ?? this.color,
+      isSynced: isSynced ?? this.isSynced,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

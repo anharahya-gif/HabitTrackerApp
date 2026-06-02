@@ -13,6 +13,8 @@ class HabitModel extends Habit {
     super.isArchived,
     super.reminderTime,
     required super.color,
+    super.isSynced,
+    super.updatedAt,
   });
 
   /// Mengonversi dari Map SQLite ke Model
@@ -27,6 +29,10 @@ class HabitModel extends Habit {
       isArchived: (map['is_archived'] as int) == 1,
       reminderTime: map['reminder_time'] as String?,
       color: map['color'] as int,
+      isSynced: (map['is_synced'] as int? ?? 0) == 1,
+      updatedAt: map['updated_at'] != null && (map['updated_at'] as String).isNotEmpty
+          ? DateTime.parse(map['updated_at'] as String)
+          : DateTime.now(),
     );
   }
 
@@ -42,6 +48,8 @@ class HabitModel extends Habit {
       isArchived: habit.isArchived,
       reminderTime: habit.reminderTime,
       color: habit.color,
+      isSynced: habit.isSynced,
+      updatedAt: habit.updatedAt,
     );
   }
 
@@ -57,6 +65,8 @@ class HabitModel extends Habit {
       'is_archived': isArchived ? 1 : 0,
       'reminder_time': reminderTime,
       'color': color,
+      'is_synced': isSynced ? 1 : 0,
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
     };
   }
 
@@ -72,6 +82,8 @@ class HabitModel extends Habit {
       isArchived: isArchived,
       reminderTime: reminderTime,
       color: color,
+      isSynced: isSynced,
+      updatedAt: updatedAt,
     );
   }
 }

@@ -11,6 +11,8 @@ import '../features/habits/domain/usecases/get_habit_by_id.dart';
 import '../features/habits/domain/usecases/get_habits.dart';
 import '../features/habits/domain/usecases/update_habit.dart';
 import '../features/tracking/data/datasources/tracking_local_data_source.dart';
+import '../features/tracking/data/datasources/tracking_remote_data_source.dart';
+import '../features/tracking/data/services/sync_service.dart';
 import '../features/tracking/data/repositories/tracking_repository_impl.dart';
 import '../features/tracking/domain/entities/habit_log.dart';
 import '../features/tracking/domain/repositories/tracking_repository.dart';
@@ -35,6 +37,24 @@ final trackingLocalDataSourceProvider = Provider<TrackingLocalDataSource>((ref) 
   final dbHelper = ref.watch(databaseHelperProvider);
   return TrackingLocalDataSource(dbHelper);
 });
+
+final trackingRemoteDataSourceProvider = Provider<TrackingRemoteDataSource>((ref) {
+  return TrackingRemoteDataSource();
+});
+
+final syncServiceProvider = Provider<SyncService>((ref) {
+  final localHabitDS = ref.watch(habitLocalDataSourceProvider);
+  final localLogDS = ref.watch(trackingLocalDataSourceProvider);
+  final remoteDS = ref.watch(trackingRemoteDataSourceProvider);
+  final calculateStreak = ref.watch(calculateStreakProvider);
+  return SyncService(
+    localHabitDS: localHabitDS,
+    localLogDS: localLogDS,
+    remoteDS: remoteDS,
+    calculateStreak: calculateStreak,
+  );
+});
+
 
 // ==========================================
 // 2. REPOSITORIES PROVIDERS

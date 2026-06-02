@@ -1,4 +1,4 @@
-package com.habittracker.app.habit_tracker_app
+package com.anhar.dailio
 
 import io.flutter.embedding.android.FlutterActivity
 

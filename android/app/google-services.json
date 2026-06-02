@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "152879355769",
+    "project_id": "dailio-habit-tracker",
+    "storage_bucket": "dailio-habit-tracker.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:152879355769:android:34cf772e4fc99c8d5101a8",
+        "android_client_info": {
+          "package_name": "com.anhar.dailio"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "152879355769-7vu0e2sc1pdmudqjmjffgvhm5ffnrbop.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9sxPsSBLzANTnRUdLHO4ViW_9gHURyOQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "152879355769-7vu0e2sc1pdmudqjmjffgvhm5ffnrbop.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "152879355769-bp7bad2pnkj1fmnv1espjpnmer5a7cr8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.habittracker.app.habitTrackerApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:152879355769:android:9430afa9f198b5455101a8",
+        "android_client_info": {
+          "package_name": "com.habittracker.app.habit_tracker_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "152879355769-7vu0e2sc1pdmudqjmjffgvhm5ffnrbop.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9sxPsSBLzANTnRUdLHO4ViW_9gHURyOQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "152879355769-7vu0e2sc1pdmudqjmjffgvhm5ffnrbop.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "152879355769-bp7bad2pnkj1fmnv1espjpnmer5a7cr8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.habittracker.app.habitTrackerApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

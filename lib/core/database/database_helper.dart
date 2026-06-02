@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 1, // Siap untuk migrasi dengan menaikkan versi ini
+      version: 2, // Naikkan versi ke 2 untuk memicu migrasi
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -45,7 +45,9 @@ class DatabaseHelper {
         created_at TEXT NOT NULL,
         is_archived INTEGER NOT NULL DEFAULT 0,
         reminder_time TEXT,
-        color INTEGER NOT NULL
+        color INTEGER NOT NULL,
+        is_synced INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL
       )
     ''');
 
@@ -57,6 +59,8 @@ class DatabaseHelper {
         date TEXT NOT NULL,
         status TEXT NOT NULL,
         completed_at TEXT,
+        is_synced INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
         FOREIGN KEY (habit_id) REFERENCES habits (id) ON DELETE CASCADE
       )
     ''');
@@ -77,11 +81,15 @@ class DatabaseHelper {
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    // Logika migrasi siap ditaruh di sini jika skema berubah pada update berikutnya.
-    // Contoh:
-    // if (oldVersion < 2) {
-    //   await db.execute('ALTER TABLE habits ADD COLUMN category_id TEXT');
-    // }
+    if (oldVersion < 2) {
+      // Tambah kolom is_synced dan updated_at ke tabel habits
+      await db.execute('ALTER TABLE habits ADD COLUMN is_synced INTEGER NOT NULL DEFAULT 0');
+      await db.execute('ALTER TABLE habits ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""');
+
+      // Tambah kolom is_synced dan updated_at ke tabel habit_logs
+      await db.execute('ALTER TABLE habit_logs ADD COLUMN is_synced INTEGER NOT NULL DEFAULT 0');
+      await db.execute('ALTER TABLE habit_logs ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""');
+    }
   }
 
   /// Menutup koneksi database (opsional, berguna untuk testing)

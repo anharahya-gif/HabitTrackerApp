@@ -24,6 +24,8 @@ class HabitLocalDataSource {
       type: 'daily',
       createdAt: DateTime.now().subtract(const Duration(days: 3)),
       color: 0xFF5AA9FF,
+      isSynced: true,
+      updatedAt: DateTime.now(),
     ),
     HabitModel(
       id: 'mock-2',
@@ -33,6 +35,8 @@ class HabitLocalDataSource {
       type: 'daily',
       createdAt: DateTime.now().subtract(const Duration(days: 2)),
       color: 0xFF4ADE80,
+      isSynced: true,
+      updatedAt: DateTime.now(),
     ),
   ];
 
@@ -177,6 +181,50 @@ class HabitLocalDataSource {
       }
     } catch (e) {
       throw DatabaseException('Gagal menghapus habit dari database.', e);
+    }
+  }
+
+  /// Mengambil daftar habit yang belum tersinkronisasi (is_synced = 0).
+  Future<List<HabitModel>> getUnsyncedHabits() async {
+    if (kIsWeb) {
+      return _webHabits.where((h) => !h.isSynced).toList();
+    }
+
+    try {
+      final db = await _dbHelper.database;
+      final List<Map<String, dynamic>> maps = await db.query(
+        'habits',
+        where: 'is_synced = ?',
+        whereArgs: [0],
+      );
+      return maps.map((map) => HabitModel.fromSqlMap(map)).toList();
+    } catch (e) {
+      throw DatabaseException('Gagal mengambil daftar habit yang belum tersinkronisasi.', e);
+    }
+  }
+
+  /// Menandai status sinkronisasi habit lokal menjadi tersinkronisasi (is_synced = 1).
+  Future<void> markHabitAsSynced(String id) async {
+    if (kIsWeb) {
+      final index = _webHabits.indexWhere((h) => h.id == id);
+      if (index != -1) {
+        _webHabits[index] = HabitModel.fromEntity(
+          _webHabits[index].copyWith(isSynced: true),
+        );
+      }
+      return;
+    }
+
+    try {
+      final db = await _dbHelper.database;
+      await db.update(
+        'habits',
+        {'is_synced': 1},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      throw DatabaseException('Gagal menandai sinkronisasi habit di SQLite.', e);
     }
   }
 

@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/errors/failure.dart';
 import '../../domain/entities/app_user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../models/user_model.dart';
 
-/// Implementasi konkrit dari [AuthRepository] menggunakan package `google_sign_in`.
-/// Mendukung login Google, bypass simulasi demo, dan default Guest Mode.
+/// Implementasi konkrit dari [AuthRepository] menggunakan package `google_sign_in` dan `firebase_auth`.
+/// Mendukung login Google asli dengan Firebase, bypass simulasi demo, dan default Guest Mode.
 class AuthRepositoryImpl implements AuthRepository {
   final GoogleSignIn _googleSignIn;
   
@@ -23,7 +24,21 @@ class AuthRepositoryImpl implements AuthRepository {
             'profile',
           ],
         ) {
-    // Siarkan status default (Guest) saat pertama kali diinisialisasi
+    // Siarkan status default (Guest atau user aktif) saat pertama kali diinisialisasi
+    _initSession();
+  }
+
+  Future<void> _initSession() async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      _currentUser = AppUser(
+        id: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        displayName: firebaseUser.displayName ?? 'Pengguna Dailio',
+        photoUrl: firebaseUser.photoURL,
+        isGuest: false,
+      );
+    }
     _authStreamController.add(_currentUser);
   }
 
@@ -32,6 +47,16 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Result<AppUser>> getActiveUser() async {
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      _currentUser = AppUser(
+        id: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        displayName: firebaseUser.displayName ?? 'Pengguna Dailio',
+        photoUrl: firebaseUser.photoURL,
+        isGuest: false,
+      );
+    }
     return Success(_currentUser);
   }
 
@@ -51,11 +76,26 @@ class AuthRepositoryImpl implements AuthRepository {
         return const Failure('Proses masuk dibatalkan oleh pengguna.');
       }
 
+      // Ambil detail autentikasi Google
+      final GoogleSignInAuthentication googleAuth = await googleAccount.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Jalankan autentikasi Firebase Auth dengan kredensial Google
+      final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final User? firebaseUser = userCredential.user;
+
+      if (firebaseUser == null) {
+        return const Failure('Gagal mendapatkan sesi autentikasi dari Firebase.');
+      }
+
       final appUser = AppUser(
-        id: googleAccount.id,
-        email: googleAccount.email,
-        displayName: googleAccount.displayName ?? 'Pengguna Dailio',
-        photoUrl: googleAccount.photoUrl,
+        id: firebaseUser.uid, // Menggunakan Firebase UID agar sesuai dengan Firestore Rules
+        email: firebaseUser.email ?? googleAccount.email,
+        displayName: firebaseUser.displayName ?? googleAccount.displayName ?? 'Pengguna Dailio',
+        photoUrl: firebaseUser.photoURL ?? googleAccount.photoUrl,
         isGuest: false,
       );
 
@@ -74,6 +114,11 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<void>> logout() async {
     try {
+      // Sign out dari Firebase Auth SDK jika aktif
+      if (FirebaseAuth.instance.currentUser != null) {
+        await FirebaseAuth.instance.signOut();
+      }
+
       // Sign out dari Google SDK jika sedang terhubung
       if (await _googleSignIn.isSignedIn()) {
         await _googleSignIn.signOut();

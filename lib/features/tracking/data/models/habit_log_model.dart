@@ -8,6 +8,8 @@ class HabitLogModel extends HabitLog {
     required super.date,
     required super.status,
     super.completedAt,
+    super.isSynced,
+    super.updatedAt,
   });
 
   /// Mengonversi dari Map SQLite ke Model
@@ -20,6 +22,10 @@ class HabitLogModel extends HabitLog {
       completedAt: map['completed_at'] != null
           ? DateTime.parse(map['completed_at'] as String)
           : null,
+      isSynced: (map['is_synced'] as int? ?? 0) == 1,
+      updatedAt: map['updated_at'] != null && (map['updated_at'] as String).isNotEmpty
+          ? DateTime.parse(map['updated_at'] as String)
+          : DateTime.now(),
     );
   }
 
@@ -31,6 +37,8 @@ class HabitLogModel extends HabitLog {
       date: log.date,
       status: log.status,
       completedAt: log.completedAt,
+      isSynced: log.isSynced,
+      updatedAt: log.updatedAt,
     );
   }
 
@@ -42,6 +50,8 @@ class HabitLogModel extends HabitLog {
       'date': date,
       'status': status,
       'completed_at': completedAt?.toIso8601String(),
+      'is_synced': isSynced ? 1 : 0,
+      'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
     };
   }
 
@@ -53,6 +63,8 @@ class HabitLogModel extends HabitLog {
       date: date,
       status: status,
       completedAt: completedAt,
+      isSynced: isSynced,
+      updatedAt: updatedAt,
     );
   }
 }
