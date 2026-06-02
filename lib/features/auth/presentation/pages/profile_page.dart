@@ -16,6 +16,7 @@ import '../../domain/entities/app_user.dart';
 import '../controllers/auth_controller.dart';
 import '../../../../shared/providers.dart';
 import '../../../../core/utils/dummy_seeder.dart';
+import '../../../../core/utils/notification_service.dart';
 
 /// Halaman Profil Pengguna Dailio berdesain premium.
 /// Mendukung login Google reaktif, keluar akun, info sinkronisasi SQLite lokal,
@@ -452,6 +453,48 @@ class ProfilePage extends ConsumerWidget {
               icon: const Icon(Icons.bolt, size: 16),
               label: const Text(
                 'Generate Habit Dummy & Riwayat',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                try {
+                  await NotificationService.showTestNotification();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Notifikasi instan terkirim! Silakan cek bilah status HP Anda. 🔔'),
+                        backgroundColor: Colors.blue,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Gagal mengirim notifikasi: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue.withOpacity(0.15),
+                foregroundColor: Colors.blue,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              icon: const Icon(Icons.notifications_active, size: 16),
+              label: const Text(
+                'Test Kirim Notifikasi Instan',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ),

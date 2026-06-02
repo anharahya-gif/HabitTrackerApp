@@ -31,11 +31,19 @@ subprojects {
 }
 
 subprojects {
-    plugins.withId("org.jetbrains.kotlin.android") {
-        configure<org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension> {
-            compilerOptions {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-            }
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        val javaVersion = project.extensions.findByName("android")
+            ?.let { it as? com.android.build.gradle.BaseExtension }
+            ?.compileOptions
+            ?.targetCompatibility
+
+        val targetJvm = when (javaVersion) {
+            JavaVersion.VERSION_17 -> org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+            JavaVersion.VERSION_11 -> org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+            else -> org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+        }
+        compilerOptions {
+            jvmTarget.set(targetJvm)
         }
     }
 }

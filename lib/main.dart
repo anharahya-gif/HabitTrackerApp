@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'routes/app_router.dart';
 import 'shared/theme/app_theme.dart';
+import 'core/utils/notification_service.dart';
 
 void main() async {
   // Memastikan framework binding Flutter diinisialisasi sebelum proses sinkronisasi database dijalankan
@@ -13,6 +14,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Inisialisasi Layanan Notifikasi Lokal
+  await NotificationService.initialize();
+  await NotificationService.requestPermissions();
   
   runApp(
     // Membungkus seluruh aplikasi dengan ProviderScope untuk state management Riverpod

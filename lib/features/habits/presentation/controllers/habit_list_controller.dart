@@ -5,6 +5,7 @@ import '../../../../core/usecase/usecase.dart';
 import '../../../../shared/providers.dart';
 import '../../domain/entities/habit.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../../core/utils/notification_service.dart';
 
 /// Controller state management untuk daftar Habit menggunakan [AsyncNotifier].
 /// State berupa [AsyncValue<List<Habit>>] untuk menangani state loading, error, dan success secara elegan.
@@ -19,7 +20,11 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
     final result = await getHabitsUsecase(const NoParams());
 
     return result.fold(
-      onSuccess: (habits) => habits,
+      onSuccess: (habits) {
+        // Segarkan semua notifikasi pengingat berdasarkan data SQLite terbaru
+        NotificationService.scheduleAllNotifications(habits).catchError((_) {});
+        return habits;
+      },
       onFailure: (failure) => throw Exception(failure.message),
     );
   }
@@ -36,6 +41,10 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
     final result = await createHabitUsecase(habit);
 
     if (result is Success<void>) {
+      // Jadwalkan notifikasi untuk habit baru jika ada reminderTime
+      if (habit.reminderTime != null) {
+        await NotificationService.scheduleHabitNotification(habit);
+      }
       await refresh();
       _triggerBackgroundSync();
     }
@@ -57,6 +66,8 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
     final result = await deleteHabitUsecase(id);
 
     if (result is Success<void>) {
+      // Batalkan notifikasi dari habit yang dihapus
+      await NotificationService.cancelHabitNotification(id);
       await refresh();
     }
     return result;

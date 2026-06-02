@@ -60,6 +60,12 @@ class _AddHabitPageState extends ConsumerState<AddHabitPage> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _reminderTime ?? const TimeOfDay(hour: 8, minute: 0),
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _reminderTime) {
       setState(() {
@@ -265,7 +271,7 @@ class _AddHabitPageState extends ConsumerState<AddHabitPage> {
                         children: [
                           Text(
                             _reminderTime != null
-                                ? _reminderTime!.format(context)
+                                ? '${_reminderTime!.hour.toString().padLeft(2, '0')}:${_reminderTime!.minute.toString().padLeft(2, '0')}'
                                 : 'Tidak ada pengingat',
                             style: TextStyle(
                               color: _reminderTime != null
