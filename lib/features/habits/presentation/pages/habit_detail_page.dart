@@ -321,14 +321,30 @@ class _StatWidget extends StatelessWidget {
 }
 
 /// Grid Kalender 30 Hari Terakhir
-class _CalendarHistoryGrid extends StatelessWidget {
+/// Grid Kalender Bulanan
+class _CalendarHistoryGrid extends StatefulWidget {
   final List<dynamic> logs;
   final Color habitColor;
 
   const _CalendarHistoryGrid({
+    super.key,
     required this.logs,
     required this.habitColor,
   });
+
+  @override
+  State<_CalendarHistoryGrid> createState() => _CalendarHistoryGridState();
+}
+
+class _CalendarHistoryGridState extends State<_CalendarHistoryGrid> {
+  late DateTime _currentMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _currentMonth = DateTime(now.year, now.month, 1);
+  }
 
   String _formatTime(DateTime? dateTime) {
     if (dateTime == null) return '--:--';
@@ -338,29 +354,29 @@ class _CalendarHistoryGrid extends StatelessWidget {
     return '$hour:$minute';
   }
 
+  String _getMonthYearName(DateTime date) {
+    final months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return '${months[date.month - 1]} ${date.year}';
+  }
+
+  String _getMonthName(DateTime date) {
+    final months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    return months[date.month - 1];
+  }
+
   String _formatReadableDate(DateTime date) {
     final weekdays = [
-      'Senin',
-      'Selasa',
-      'Rabu',
-      'Kamis',
-      'Jumat',
-      'Sabtu',
-      'Minggu'
+      'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'
     ];
     final months = [
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember'
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
     ];
 
     final dayName = weekdays[date.weekday - 1];
@@ -370,11 +386,18 @@ class _CalendarHistoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Generate list 30 hari ke belakang (termasuk hari ini)
+    final year = _currentMonth.year;
+    final month = _currentMonth.month;
+
+    final firstDayOfMonth = DateTime(year, month, 1);
+    final firstWeekday = firstDayOfMonth.weekday; // Senin = 1, Minggu = 7
+    final totalDays = DateTime(year, month + 1, 0).day;
+
+    final prefixEmptyCells = firstWeekday - 1;
+    final totalCells = prefixEmptyCells + totalDays;
+
     final now = DateTime.now();
-    final List<DateTime> last30Days = List.generate(30, (index) {
-      return now.subtract(Duration(days: 29 - index));
-    });
+    final todayStr = DateFormatter.todayString;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -388,22 +411,81 @@ class _CalendarHistoryGrid extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Grid 30 Hari
+          // Header Bulan & Navigasi
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _getMonthYearName(_currentMonth),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded, size: 22),
+                    onPressed: () {
+                      setState(() {
+                        _currentMonth = DateTime(year, month - 1, 1);
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right_rounded, size: 22),
+                    onPressed: () {
+                      setState(() {
+                        _currentMonth = DateTime(year, month + 1, 1);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Header Hari
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map((day) {
+              return Expanded(
+                child: Text(
+                  day,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+
+          // Grid Kalender
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: 30,
+            itemCount: totalCells,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7, // 7 Kolom (Hari per minggu)
+              crossAxisCount: 7,
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
             ),
             itemBuilder: (context, index) {
-              final date = last30Days[index];
+              if (index < prefixEmptyCells) {
+                return const SizedBox.shrink();
+              }
+
+              final day = index - prefixEmptyCells + 1;
+              final date = DateTime(year, month, day);
               final dateStr = DateFormatter.formatDate(date);
-              
+
               // Cari log pada tanggal ini
-              final matchingLogs = logs.where((l) => l.date == dateStr);
+              final matchingLogs = widget.logs.where((l) => l.date == dateStr);
               final dayLog = matchingLogs.isNotEmpty ? matchingLogs.first : null;
 
               Color cellColor = Theme.of(context).scaffoldBackgroundColor;
@@ -411,32 +493,58 @@ class _CalendarHistoryGrid extends StatelessWidget {
                 color: Theme.of(context).dividerColor.withOpacity(0.1),
                 width: 1,
               );
+              
+              final isToday = dateStr == todayStr;
+
               Widget child = Text(
-                '${date.day}',
+                '$day',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                  color: isToday
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                 ),
               );
 
               if (dayLog != null) {
                 if (dayLog.status == 'done') {
-                  cellColor = habitColor;
+                  cellColor = widget.habitColor;
                   cellBorder = null;
-                  child = const Icon(Icons.check, color: Colors.white, size: 14);
+                  child = Text(
+                    '$day',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  );
                 } else if (dayLog.status == 'skipped') {
-                  cellColor = AppTheme.statusSkipped.withOpacity(0.2);
+                  cellColor = AppTheme.statusSkipped.withOpacity(0.15);
                   cellBorder = Border.all(color: AppTheme.statusSkipped, width: 1.5);
-                  child = const Icon(Icons.next_plan, color: AppTheme.statusSkipped, size: 14);
+                  child = Text(
+                    '$day',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.statusSkipped,
+                    ),
+                  );
                 } else if (dayLog.status == 'missed') {
-                  cellColor = AppTheme.statusMissed.withOpacity(0.2);
+                  cellColor = AppTheme.statusMissed.withOpacity(0.15);
                   cellBorder = Border.all(color: AppTheme.statusMissed, width: 1.5);
-                  child = const Icon(Icons.close, color: AppTheme.statusMissed, size: 14);
+                  child = Text(
+                    '$day',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.statusMissed,
+                    ),
+                  );
                 }
               }
 
               // Sorot hari ini dengan border tebal jika belum di-log
-              final isToday = dateStr == DateFormatter.todayString;
               if (isToday && dayLog == null) {
                 cellBorder = Border.all(
                   color: Theme.of(context).colorScheme.primary,
@@ -454,34 +562,39 @@ class _CalendarHistoryGrid extends StatelessWidget {
                 child: child,
               );
 
-              if (dayLog != null && dayLog.status == 'done' && dayLog.completedAt != null) {
-                final timeStr = _formatTime(dayLog.completedAt);
-                cellWidget = Tooltip(
-                  message: 'Selesai pukul $timeStr',
-                  child: GestureDetector(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Selesai pada ${_formatReadableDate(date)} pukul $timeStr',
-                          ),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    child: cellWidget,
-                  ),
-                );
+              // Click handler untuk info SnackBar & Tooltip
+              String tooltipMsg = '${_formatReadableDate(date)}: Belum diisi';
+              if (dayLog != null) {
+                if (dayLog.status == 'done') {
+                  tooltipMsg = 'Selesai pukul ${_formatTime(dayLog.completedAt)}';
+                } else if (dayLog.status == 'skipped') {
+                  tooltipMsg = 'Dilewati (Skipped)';
+                } else if (dayLog.status == 'missed') {
+                  tooltipMsg = 'Terlewat (Missed)';
+                }
               }
 
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: cellWidget,
-                  ),
-                ],
+              return Tooltip(
+                message: tooltipMsg,
+                child: GestureDetector(
+                  onTap: () {
+                    if (date.isAfter(now)) return; // Jangan izinkan klik tanggal masa depan
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          dayLog != null
+                              ? (dayLog.status == 'done'
+                                  ? 'Selesai pada ${_formatReadableDate(date)} pukul ${_formatTime(dayLog.completedAt)}'
+                                  : '${_formatReadableDate(date)}: ${dayLog.status == 'skipped' ? 'Dilewati' : 'Terlewat'}')
+                              : '${_formatReadableDate(date)}: Tidak ada catatan',
+                        ),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: cellWidget,
+                ),
               );
             },
           ),
@@ -498,10 +611,15 @@ class _CalendarHistoryGrid extends StatelessWidget {
             ],
           ),
 
-          // Detail Waktu Centang 30 Hari Terakhir
+          // Detail Waktu Centang untuk bulan saat ini
           () {
-            final completedLogs = logs
-                .where((l) => l.status == 'done' && l.completedAt != null)
+            final completedLogs = widget.logs
+                .where((l) {
+                  if (l.status != 'done' || l.completedAt == null) return false;
+                  final logDate = DateTime.tryParse(l.date);
+                  if (logDate == null) return false;
+                  return logDate.year == year && logDate.month == month;
+                })
                 .toList()
               ..sort((a, b) => b.date.compareTo(a.date));
 
@@ -522,7 +640,7 @@ class _CalendarHistoryGrid extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Waktu Centang Selesai (30 Hari Terakhir)',
+                      'Waktu Centang Selesai (${_getMonthName(_currentMonth)})',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -552,12 +670,12 @@ class _CalendarHistoryGrid extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: habitColor.withOpacity(0.12),
+                              color: widget.habitColor.withOpacity(0.12),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
                               Icons.check_circle_rounded,
-                              color: habitColor,
+                              color: widget.habitColor,
                               size: 14,
                             ),
                           ),
