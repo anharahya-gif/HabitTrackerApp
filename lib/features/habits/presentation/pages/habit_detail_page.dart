@@ -604,13 +604,13 @@ class _CalendarHistoryGridState extends State<_CalendarHistoryGrid> {
           
           const SizedBox(height: 16),
           // Legend Keterangan Warna
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _LegendItem(color: Colors.grey, label: 'Kosong'),
-              _LegendItem(color: Colors.green, label: 'Done', isDoneStyle: true),
-              _LegendItem(color: AppTheme.statusSkipped, label: 'Skip'),
-              _LegendItem(color: AppTheme.statusMissed, label: 'Missed'),
+              const _LegendItem(color: Colors.grey, label: 'Kosong'),
+              _LegendItem(color: widget.habitColor, label: 'Done', isDoneStyle: true),
+              const _LegendItem(color: AppTheme.statusSkipped, label: 'Skip'),
+              const _LegendItem(color: AppTheme.statusMissed, label: 'Missed'),
             ],
           ),
 

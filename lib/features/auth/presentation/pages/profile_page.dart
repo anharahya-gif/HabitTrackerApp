@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,7 @@ import '../../../habits/presentation/controllers/habit_list_controller.dart';
 import '../../domain/entities/app_user.dart';
 import '../controllers/auth_controller.dart';
 import '../../../../shared/providers.dart';
+import '../../../../core/utils/dummy_seeder.dart';
 
 /// Halaman Profil Pengguna Dailio berdesain premium.
 /// Mendukung login Google reaktif, keluar akun, info sinkronisasi SQLite lokal,
@@ -264,6 +266,12 @@ class ProfilePage extends ConsumerWidget {
           // 2.5. Cadangan Data Lokal (.xml) Ekspor & Impor
           _buildBackupSection(context, ref, habits),
 
+          if (kDebugMode) ...[
+            const SizedBox(height: 24),
+            // Tombol Seeder Dummy Sementara
+            _buildDummySeederButton(context, ref),
+          ],
+
           const SizedBox(height: 32),
 
           // 3. Tombol Aksi Autentikasi Utama
@@ -355,6 +363,98 @@ class ProfilePage extends ConsumerWidget {
                 style: TextStyle(color: Color(0xff334155), fontSize: 10),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Tombol Seeder Dummy Sementara untuk kemudahan verifikasi calendar & time log
+  Widget _buildDummySeederButton(BuildContext context, WidgetRef ref) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xff1e293b),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.amber.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.science_outlined, color: Colors.amber, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Menu Developer (Testing)',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Colors.amber,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Hasilkan 1 habit olahraga pagi beserta riwayat 40 hari penuh centang secara otomatis untuk menguji kalender.',
+            style: TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final localHabitDS = ref.read(habitLocalDataSourceProvider);
+                final localLogDS = ref.read(trackingLocalDataSourceProvider);
+                final calculateStreak = ref.read(calculateStreakProvider);
+
+                try {
+                  await DummySeeder.seedDummyHabit(
+                    habitLocalDS: localHabitDS,
+                    trackingLocalDS: localLogDS,
+                    calculateStreak: calculateStreak,
+                  );
+                  
+                  // Segarkan data UI utama
+                  await ref.read(habitListProvider.notifier).refresh();
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Habit dummy "Olahraga Pagi 🏃" berhasil di-generate! 🌱'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Gagal men-generate: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber.withOpacity(0.15),
+                foregroundColor: Colors.amber,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              icon: const Icon(Icons.bolt, size: 16),
+              label: const Text(
+                'Generate Habit Dummy & Riwayat',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
         ],
       ),
