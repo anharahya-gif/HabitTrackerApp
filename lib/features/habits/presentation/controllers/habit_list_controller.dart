@@ -77,3 +77,74 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
 final habitListProvider = AsyncNotifierProvider<HabitListController, List<Habit>>(() {
   return HabitListController();
 });
+
+/// Opsi pengurutan Habit
+enum HabitSortOption {
+  closestTime,
+  alphabetical,
+  newest,
+}
+
+/// Provider untuk menyimpan filter kategori yang aktif
+final habitCategoryFilterProvider = StateProvider<String>((ref) => 'Semua');
+
+/// Provider untuk menyimpan opsi pengurutan yang aktif
+final habitSortOptionProvider = StateProvider<HabitSortOption>((ref) => HabitSortOption.closestTime);
+
+/// Menghitung selisih menit mutlak antara waktu sekarang dengan waktu pengingat (dengan wrap-around 24 jam)
+int _calculateClosenessMinutes(String? reminderTime) {
+  if (reminderTime == null) {
+    return 99999; // Tanpa reminder, taruh di paling bawah
+  }
+
+  final parts = reminderTime.split(':');
+  if (parts.length != 2) return 99999;
+
+  final hour = int.tryParse(parts[0]) ?? 0;
+  final minute = int.tryParse(parts[1]) ?? 0;
+
+  final now = DateTime.now();
+  final nowMinutes = now.hour * 60 + now.minute;
+  final reminderMinutes = hour * 60 + minute;
+
+  final diff = (nowMinutes - reminderMinutes).abs();
+  // Tangani pembulatan 24 jam (wrap-around)
+  return diff < 1440 - diff ? diff : 1440 - diff;
+}
+
+/// Provider gabungan untuk memfilter dan mengurutkan Habit secara reaktif
+final filteredHabitsProvider = Provider<AsyncValue<List<Habit>>>((ref) {
+  final habitsAsync = ref.watch(habitListProvider);
+  final categoryFilter = ref.watch(habitCategoryFilterProvider);
+  final sortOption = ref.watch(habitSortOptionProvider);
+
+  return habitsAsync.whenData((habits) {
+    // 1. Lakukan penyaringan Kategori
+    var resultList = habits;
+    if (categoryFilter != 'Semua') {
+      resultList = resultList.where((h) => h.category == categoryFilter).toList();
+    }
+
+    // 2. Lakukan pengurutan
+    switch (sortOption) {
+      case HabitSortOption.closestTime:
+        resultList = List.from(resultList)
+          ..sort((a, b) {
+            final diffA = _calculateClosenessMinutes(a.reminderTime);
+            final diffB = _calculateClosenessMinutes(b.reminderTime);
+            return diffA.compareTo(diffB);
+          });
+        break;
+      case HabitSortOption.alphabetical:
+        resultList = List.from(resultList)
+          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        break;
+      case HabitSortOption.newest:
+        resultList = List.from(resultList)
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+    }
+
+    return resultList;
+  });
+});

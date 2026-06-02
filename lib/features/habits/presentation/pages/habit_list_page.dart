@@ -45,7 +45,7 @@ class HabitListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final habitsAsync = ref.watch(habitListProvider);
+    final habitsAsync = ref.watch(filteredHabitsProvider);
     final authState = ref.watch(authControllerProvider);
     final user = authState.valueOrNull ?? AppUser.guest;
 
@@ -183,11 +183,33 @@ class HabitListPage extends ConsumerWidget {
                               fontWeight: FontWeight.bold,
                             ),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          // Placeholder fitur filter ke depan
+                      Consumer(
+                        builder: (context, ref, _) {
+                          final activeFilter = ref.watch(habitCategoryFilterProvider);
+                          final activeSort = ref.watch(habitSortOptionProvider);
+                          final hasActiveChanges = activeFilter != 'Semua' || activeSort != HabitSortOption.closestTime;
+
+                          return TextButton.icon(
+                            onPressed: () => _showFilterSortBottomSheet(context, ref),
+                            icon: const Icon(Icons.tune_rounded, size: 16),
+                            label: Row(
+                              children: [
+                                const Text('Filter & Urutkan'),
+                                if (hasActiveChanges) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.amber,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ]
+                              ],
+                            ),
+                          );
                         },
-                        child: const Text('Filter'),
                       )
                     ],
                   ),
@@ -379,6 +401,202 @@ class _EmptyHabitState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Bottom Sheet untuk memfilter dan mengurutkan habit secara premium
+void _showFilterSortBottomSheet(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: const Color(0xff111318),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (context) {
+      return Consumer(
+        builder: (context, ref, _) {
+          final activeFilter = ref.watch(habitCategoryFilterProvider);
+          final activeSort = ref.watch(habitSortOptionProvider);
+
+          final categories = [
+            'Semua',
+            'Kesehatan',
+            'Produktivitas',
+            'Kebugaran',
+            'Mental/Pikiran',
+            'Sosial/Hubungan',
+            'Lainnya',
+          ];
+
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Drag handle
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Filter & Urutkan',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          ref.read(habitCategoryFilterProvider.notifier).state = 'Semua';
+                          ref.read(habitSortOptionProvider.notifier).state = HabitSortOption.closestTime;
+                        },
+                        child: const Text('Reset', style: TextStyle(fontSize: 13)),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24, color: Colors.white10),
+
+                  // Sorting Section
+                  const Text(
+                    'Urutkan Berdasarkan',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _SortChip(
+                        label: 'Waktu Terdekat',
+                        icon: Icons.access_time_rounded,
+                        isSelected: activeSort == HabitSortOption.closestTime,
+                        onSelected: () => ref.read(habitSortOptionProvider.notifier).state = HabitSortOption.closestTime,
+                      ),
+                      _SortChip(
+                        label: 'Nama (A-Z)',
+                        icon: Icons.sort_by_alpha_rounded,
+                        isSelected: activeSort == HabitSortOption.alphabetical,
+                        onSelected: () => ref.read(habitSortOptionProvider.notifier).state = HabitSortOption.alphabetical,
+                      ),
+                      _SortChip(
+                        label: 'Terbaru',
+                        icon: Icons.calendar_month_rounded,
+                        isSelected: activeSort == HabitSortOption.newest,
+                        onSelected: () => ref.read(habitSortOptionProvider.notifier).state = HabitSortOption.newest,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Filter Section
+                  const Text(
+                    'Filter Kategori',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 38,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categories.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final cat = categories[index];
+                        final isSelected = activeFilter == cat;
+                        return ChoiceChip(
+                          label: Text(
+                            cat,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isSelected ? Colors.white : Colors.white70,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          selected: isSelected,
+                          selectedColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: isSelected 
+                                  ? Colors.transparent 
+                                  : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                            ),
+                          ),
+                          onSelected: (selected) {
+                            if (selected) {
+                              ref.read(habitCategoryFilterProvider.notifier).state = cat;
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+class _SortChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onSelected;
+
+  const _SortChip({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ChoiceChip(
+      avatar: Icon(
+        icon,
+        size: 14,
+        color: isSelected ? Colors.white : theme.colorScheme.primary,
+      ),
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: isSelected ? Colors.white : Colors.white70,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: isSelected,
+      selectedColor: theme.colorScheme.primary,
+      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(
+          color: isSelected ? Colors.transparent : theme.colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      onSelected: (_) => onSelected(),
     );
   }
 }
