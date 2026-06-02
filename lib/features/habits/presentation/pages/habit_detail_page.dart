@@ -330,6 +330,44 @@ class _CalendarHistoryGrid extends StatelessWidget {
     required this.habitColor,
   });
 
+  String _formatTime(DateTime? dateTime) {
+    if (dateTime == null) return '--:--';
+    final localTime = dateTime.toLocal();
+    final hour = localTime.hour.toString().padLeft(2, '0');
+    final minute = localTime.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  String _formatReadableDate(DateTime date) {
+    final weekdays = [
+      'Senin',
+      'Selasa',
+      'Rabu',
+      'Kamis',
+      'Jumat',
+      'Sabtu',
+      'Minggu'
+    ];
+    final months = [
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember'
+    ];
+
+    final dayName = weekdays[date.weekday - 1];
+    final monthName = months[date.month - 1];
+    return '$dayName, ${date.day} $monthName';
+  }
+
   @override
   Widget build(BuildContext context) {
     // Generate list 30 hari ke belakang (termasuk hari ini)
@@ -348,6 +386,7 @@ class _CalendarHistoryGrid extends StatelessWidget {
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Grid 30 Hari
           GridView.builder(
@@ -405,19 +444,42 @@ class _CalendarHistoryGrid extends StatelessWidget {
                 );
               }
 
+              Widget cellWidget = Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: cellColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: cellBorder,
+                ),
+                child: child,
+              );
+
+              if (dayLog != null && dayLog.status == 'done' && dayLog.completedAt != null) {
+                final timeStr = _formatTime(dayLog.completedAt);
+                cellWidget = Tooltip(
+                  message: 'Selesai pukul $timeStr',
+                  child: GestureDetector(
+                    onTap: () {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Selesai pada ${_formatReadableDate(date)} pukul $timeStr',
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    child: cellWidget,
+                  ),
+                );
+              }
+
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Expanded(
-                    child: Container(
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: cellColor,
-                        borderRadius: BorderRadius.circular(8),
-                        border: cellBorder,
-                      ),
-                      child: child,
-                    ),
+                    child: cellWidget,
                   ),
                 ],
               );
@@ -434,7 +496,107 @@ class _CalendarHistoryGrid extends StatelessWidget {
               _LegendItem(color: AppTheme.statusSkipped, label: 'Skip'),
               _LegendItem(color: AppTheme.statusMissed, label: 'Missed'),
             ],
-          )
+          ),
+
+          // Detail Waktu Centang 30 Hari Terakhir
+          () {
+            final completedLogs = logs
+                .where((l) => l.status == 'done' && l.completedAt != null)
+                .toList()
+              ..sort((a, b) => b.date.compareTo(a.date));
+
+            if (completedLogs.isEmpty) return const SizedBox.shrink();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.history_toggle_off_rounded,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Waktu Centang Selesai (30 Hari Terakhir)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: completedLogs.length,
+                  separatorBuilder: (context, index) => Divider(
+                    height: 1,
+                    color: Theme.of(context).dividerColor.withOpacity(0.05),
+                  ),
+                  itemBuilder: (context, index) {
+                    final log = completedLogs[index];
+                    final dateObj = DateTime.tryParse(log.date) ?? DateTime.now();
+                    final formattedDateStr = _formatReadableDate(dateObj);
+                    final timeStr = _formatTime(log.completedAt);
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: habitColor.withOpacity(0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.check_circle_rounded,
+                              color: habitColor,
+                              size: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              formattedDateStr,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Pukul $timeStr',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            );
+          }(),
         ],
       ),
     );
