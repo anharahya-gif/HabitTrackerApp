@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 3, // Naikkan versi ke 3 untuk mendukung target waktu pelaksanaan
+      version: 4, // Naikkan versi ke 4 untuk mendukung tipe pengingat (notifikasi vs alarm)
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -49,7 +49,8 @@ class DatabaseHelper {
         is_synced INTEGER NOT NULL DEFAULT 0,
         updated_at TEXT NOT NULL,
         start_time TEXT,
-        end_time TEXT
+        end_time TEXT,
+        reminder_type TEXT NOT NULL DEFAULT 'notification'
       )
     ''');
 
@@ -97,6 +98,11 @@ class DatabaseHelper {
       // Tambah kolom start_time dan end_time ke tabel habits
       await db.execute('ALTER TABLE habits ADD COLUMN start_time TEXT');
       await db.execute('ALTER TABLE habits ADD COLUMN end_time TEXT');
+    }
+
+    if (oldVersion < 4) {
+      // Tambah kolom reminder_type ke tabel habits
+      await db.execute("ALTER TABLE habits ADD COLUMN reminder_type TEXT NOT NULL DEFAULT 'notification'");
     }
   }
 

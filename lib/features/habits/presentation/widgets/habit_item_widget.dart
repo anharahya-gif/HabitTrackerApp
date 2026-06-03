@@ -136,7 +136,9 @@ class HabitItemWidget extends ConsumerWidget {
                                     ),
                                     const SizedBox(width: 6),
                                     Icon(
-                                      Icons.notifications_none_rounded,
+                                      habit.reminderType == 'alarm'
+                                          ? Icons.alarm_on_rounded
+                                          : Icons.notifications_none_rounded,
                                       size: 11,
                                       color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
                                     ),

@@ -213,27 +213,41 @@ class HabitDetailPage extends ConsumerWidget {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.statusSkipped.withOpacity(0.12),
+                                        color: (habit.reminderType == 'alarm'
+                                                ? Theme.of(context).colorScheme.primary
+                                                : AppTheme.statusSkipped)
+                                            .withOpacity(0.12),
                                         borderRadius: BorderRadius.circular(6),
                                         border: Border.all(
-                                          color: AppTheme.statusSkipped.withOpacity(0.3),
+                                          color: (habit.reminderType == 'alarm'
+                                                  ? Theme.of(context).colorScheme.primary
+                                                  : AppTheme.statusSkipped)
+                                              .withOpacity(0.3),
                                           width: 1,
                                         ),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(
-                                            Icons.notifications_none_rounded,
+                                          Icon(
+                                            habit.reminderType == 'alarm'
+                                                ? Icons.alarm_on_rounded
+                                                : Icons.notifications_none_rounded,
                                             size: 14,
-                                            color: AppTheme.statusSkipped,
+                                            color: habit.reminderType == 'alarm'
+                                                ? Theme.of(context).colorScheme.primary
+                                                : AppTheme.statusSkipped,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            habit.reminderTime!,
-                                            style: const TextStyle(
+                                            habit.reminderType == 'alarm'
+                                                ? 'Alarm: ${habit.reminderTime}'
+                                                : 'Notifikasi: ${habit.reminderTime}',
+                                            style: TextStyle(
                                               fontSize: 12,
-                                              color: AppTheme.statusSkipped,
+                                              color: habit.reminderType == 'alarm'
+                                                  ? Theme.of(context).colorScheme.primary
+                                                  : AppTheme.statusSkipped,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),

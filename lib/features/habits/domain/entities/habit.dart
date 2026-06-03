@@ -13,6 +13,7 @@ class Habit {
   final DateTime? updatedAt;
   final String? startTime; // e.g. '08:00'
   final String? endTime; // e.g. '10:00'
+  final String reminderType; // 'notification' atau 'alarm'
 
   const Habit({
     required this.id,
@@ -28,6 +29,7 @@ class Habit {
     this.updatedAt,
     this.startTime,
     this.endTime,
+    this.reminderType = 'notification',
   });
 
   /// Menggandakan entitas dengan perubahan properti tertentu.
@@ -45,6 +47,7 @@ class Habit {
     DateTime? updatedAt,
     String? startTime,
     String? endTime,
+    String? reminderType,
   }) {
     return Habit(
       id: id ?? this.id,
@@ -60,6 +63,7 @@ class Habit {
       updatedAt: updatedAt ?? this.updatedAt,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
+      reminderType: reminderType ?? this.reminderType,
     );
   }
 }

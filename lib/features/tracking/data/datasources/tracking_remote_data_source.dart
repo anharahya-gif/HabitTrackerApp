@@ -39,6 +39,7 @@ class TrackingRemoteDataSource {
         'updated_at': habit.updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
         'start_time': habit.startTime,
         'end_time': habit.endTime,
+        'reminder_type': habit.reminderType,
       };
 
       await docRef.set(data, SetOptions(merge: true));
@@ -74,6 +75,7 @@ class TrackingRemoteDataSource {
               : DateTime.now(),
           startTime: data['start_time'] as String?,
           endTime: data['end_time'] as String?,
+          reminderType: data['reminder_type'] as String? ?? 'notification',
         );
       }).toList();
     } catch (e) {

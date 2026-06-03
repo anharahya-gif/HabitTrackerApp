@@ -27,6 +27,7 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
   late int _selectedColor;
+  String _reminderType = 'notification';
 
   // Pilihan warna premium untuk habit
   final List<int> _colors = [
@@ -67,9 +68,16 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
     if (_isInitialized) return;
     _nameController.text = habit.name;
     _descController.text = habit.description ?? '';
+    
+    // Pastikan kategori dari habit ada dalam list pilihan kategori dropdown untuk mencegah crash DropdownButton
+    if (!_categories.contains(habit.category)) {
+      _categories.add(habit.category);
+    }
+
     _category = habit.category;
     _type = habit.type;
     _selectedColor = habit.color;
+    _reminderType = habit.reminderType;
 
     if (habit.reminderTime != null) {
       final parts = habit.reminderTime!.split(':');
@@ -201,6 +209,7 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
       isSynced: false, // Menandai butuh sync ulang ke cloud
       startTime: startTimeStr,
       endTime: endTimeStr,
+      reminderType: _reminderType,
     );
 
     // Kirim aksi pembaruan ke controller
@@ -408,6 +417,51 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
                           ),
                         ),
                       ),
+                      if (_reminderTime != null) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'Tipe Pengingat',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: SegmentedButton<String>(
+                            segments: const <ButtonSegment<String>>[
+                              ButtonSegment<String>(
+                                value: 'notification',
+                                label: Text('Notifikasi Biasa'),
+                                icon: Icon(Icons.notifications_none_rounded),
+                              ),
+                              ButtonSegment<String>(
+                                value: 'alarm',
+                                label: Text('Alarm Berdering'),
+                                icon: Icon(Icons.alarm_on_rounded),
+                              ),
+                            ],
+                            selected: <String>{_reminderType},
+                            onSelectionChanged: (Set<String> newSelection) {
+                              setState(() {
+                                _reminderType = newSelection.first;
+                              });
+                            },
+                            style: SegmentedButton.styleFrom(
+                              selectedBackgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                              selectedForegroundColor: Theme.of(context).colorScheme.primary,
+                              side: BorderSide(
+                                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
 
                       // Target Waktu Pelaksanaan (Opsional)

@@ -10,7 +10,7 @@ class CsvHabitHelper {
     final List<String> csvRows = [];
     
     // 1. Tambahkan Header
-    csvRows.add('id,name,description,category,type,created_at,is_archived,reminder_time,color,start_time,end_time');
+    csvRows.add('id,name,description,category,type,created_at,is_archived,reminder_time,color,start_time,end_time,reminder_type');
     
     // 2. Tambahkan Data
     for (final habit in habits) {
@@ -25,8 +25,9 @@ class CsvHabitHelper {
       final color = habit.color.toString();
       final startTime = _escapeField(habit.startTime ?? '');
       final endTime = _escapeField(habit.endTime ?? '');
+      final reminderType = _escapeField(habit.reminderType);
       
-      csvRows.add('$id,$name,$description,$category,$type,$createdAt,$isArchived,$reminderTime,$color,$startTime,$endTime');
+      csvRows.add('$id,$name,$description,$category,$type,$createdAt,$isArchived,$reminderTime,$color,$startTime,$endTime,$reminderType');
     }
     
     return csvRows.join('\n');
@@ -68,6 +69,7 @@ class CsvHabitHelper {
       final color = int.tryParse(fields[8]) ?? 4284128256;
       final startTime = fields.length > 9 && fields[9].isNotEmpty ? fields[9] : null;
       final endTime = fields.length > 10 && fields[10].isNotEmpty ? fields[10] : null;
+      final reminderType = fields.length > 11 && fields[11].isNotEmpty ? fields[11] : 'notification';
       
       habits.add(Habit(
         id: id,
@@ -81,6 +83,7 @@ class CsvHabitHelper {
         color: color,
         startTime: startTime,
         endTime: endTime,
+        reminderType: reminderType,
       ));
     }
     

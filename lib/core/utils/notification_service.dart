@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -121,15 +122,31 @@ class NotificationService {
     final int notificationId = habit.id.hashCode & 0x7FFFFFFF;
 
     // Konfigurasi Detail Saluran Android
-    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'habit_reminders', // Channel ID
-      'Pengingat Kebiasaan', // Channel Name
-      channelDescription: 'Saluran notifikasi pengingat kebiasaan harian dan mingguan',
-      importance: Importance.max,
-      priority: Priority.high,
-      color: Color(habit.color),
-      playSound: true,
-    );
+    final AndroidNotificationDetails androidDetails;
+    if (habit.reminderType == 'alarm') {
+      androidDetails = AndroidNotificationDetails(
+        'habit_alarms', // Channel ID
+        'Alarm Pengingat Habit', // Channel Name
+        channelDescription: 'Saluran alarm pengingat kebiasaan yang berdering terus-menerus',
+        importance: Importance.max,
+        priority: Priority.high,
+        color: Color(habit.color),
+        playSound: true,
+        additionalFlags: Int32List.fromList(<int>[4]), // FLAG_INSISTENT = 4
+        audioAttributesUsage: AudioAttributesUsage.alarm,
+        category: AndroidNotificationCategory.alarm,
+      );
+    } else {
+      androidDetails = AndroidNotificationDetails(
+        'habit_reminders', // Channel ID
+        'Pengingat Kebiasaan', // Channel Name
+        channelDescription: 'Saluran notifikasi pengingat kebiasaan harian dan mingguan',
+        importance: Importance.max,
+        priority: Priority.high,
+        color: Color(habit.color),
+        playSound: true,
+      );
+    }
 
     // Konfigurasi Gabungan Platform
     final NotificationDetails notificationDetails = NotificationDetails(

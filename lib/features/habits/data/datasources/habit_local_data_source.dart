@@ -28,6 +28,7 @@ class HabitLocalDataSource {
       updatedAt: DateTime.now(),
       startTime: '06:00',
       endTime: '06:30',
+      reminderType: 'notification',
     ),
     HabitModel(
       id: 'mock-2',
@@ -41,6 +42,7 @@ class HabitLocalDataSource {
       updatedAt: DateTime.now(),
       startTime: '20:00',
       endTime: '20:45',
+      reminderType: 'notification',
     ),
   ];
 

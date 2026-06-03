@@ -23,6 +23,7 @@ class _AddHabitPageState extends ConsumerState<AddHabitPage> {
   TimeOfDay? _reminderTime;
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
+  String _reminderType = 'notification';
   
   // Pilihan warna premium untuk habit
   final List<int> _colors = [
@@ -161,6 +162,7 @@ class _AddHabitPageState extends ConsumerState<AddHabitPage> {
       color: _selectedColor,
       startTime: startTimeStr,
       endTime: endTimeStr,
+      reminderType: _reminderType,
     );
 
     // Kirim aksi ke controller
@@ -357,6 +359,51 @@ class _AddHabitPageState extends ConsumerState<AddHabitPage> {
                       ),
                     ),
                   ),
+                  if (_reminderTime != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'Tipe Pengingat',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<String>(
+                        segments: const <ButtonSegment<String>>[
+                          ButtonSegment<String>(
+                            value: 'notification',
+                            label: Text('Notifikasi Biasa'),
+                            icon: Icon(Icons.notifications_none_rounded),
+                          ),
+                          ButtonSegment<String>(
+                            value: 'alarm',
+                            label: Text('Alarm Berdering'),
+                            icon: Icon(Icons.alarm_on_rounded),
+                          ),
+                        ],
+                        selected: <String>{_reminderType},
+                        onSelectionChanged: (Set<String> newSelection) {
+                          setState(() {
+                            _reminderType = newSelection.first;
+                          });
+                        },
+                        style: SegmentedButton.styleFrom(
+                          selectedBackgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                          selectedForegroundColor: Theme.of(context).colorScheme.primary,
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
 
                   // Target Waktu Pelaksanaan (Opsional)
