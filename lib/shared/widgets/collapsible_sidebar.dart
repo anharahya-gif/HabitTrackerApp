@@ -133,6 +133,19 @@ class CollapsibleSidebar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   _SidebarMenuItem(
+                    icon: Icons.playlist_add_check_outlined,
+                    activeIcon: Icons.playlist_add_check_rounded,
+                    label: 'Tugas Harian',
+                    route: '/tasks',
+                    isActive: location == '/tasks',
+                    isCollapsed: isCollapsed && !isDrawer,
+                    onTap: () {
+                      context.go('/tasks');
+                      if (isDrawer) Navigator.of(context).pop();
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _SidebarMenuItem(
                     icon: Icons.person_outline_rounded,
                     activeIcon: Icons.person_rounded,
                     label: 'Profil Saya',

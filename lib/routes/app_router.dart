@@ -7,6 +7,7 @@ import '../features/habits/presentation/pages/habit_list_page.dart';
 import '../features/habits/presentation/pages/splash_page.dart';
 import '../features/auth/presentation/pages/profile_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
+import '../features/tasks/presentation/pages/task_list_page.dart';
 import '../shared/widgets/main_layout_shell.dart';
 
 /// Konfigurasi navigasi global menggunakan go_router.
@@ -40,6 +41,13 @@ class AppRouter {
             name: 'home',
             builder: (BuildContext context, GoRouterState state) {
               return const HabitListPage();
+            },
+          ),
+          GoRoute(
+            path: '/tasks',
+            name: 'tasks',
+            builder: (BuildContext context, GoRouterState state) {
+              return const TaskListPage();
             },
           ),
           GoRoute(

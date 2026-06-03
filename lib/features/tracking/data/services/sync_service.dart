@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../habits/data/datasources/habit_local_data_source.dart';
+import '../../../tasks/data/datasources/task_local_data_source.dart';
 import '../../domain/usecases/calculate_streak.dart';
 import '../datasources/tracking_local_data_source.dart';
 import '../datasources/tracking_remote_data_source.dart';
@@ -10,6 +11,7 @@ import '../datasources/tracking_remote_data_source.dart';
 class SyncService {
   final HabitLocalDataSource _localHabitDS;
   final TrackingLocalDataSource _localLogDS;
+  final TaskLocalDataSource _localTaskDS;
   final TrackingRemoteDataSource _remoteDS;
   final Connectivity _connectivity;
   final CalculateStreak _calculateStreak;
@@ -17,11 +19,13 @@ class SyncService {
   SyncService({
     required HabitLocalDataSource localHabitDS,
     required TrackingLocalDataSource localLogDS,
+    required TaskLocalDataSource localTaskDS,
     required TrackingRemoteDataSource remoteDS,
     required CalculateStreak calculateStreak,
     Connectivity? connectivity,
   })  : _localHabitDS = localHabitDS,
         _localLogDS = localLogDS,
+        _localTaskDS = localTaskDS,
         _remoteDS = remoteDS,
         _calculateStreak = calculateStreak,
         _connectivity = connectivity ?? Connectivity();
@@ -61,6 +65,16 @@ class SyncService {
         await _remoteDS.uploadHabitLog(userId, log);
         await _localLogDS.markLogAsSynced(log.id);
         print('   ✅ Log berhasil diunggah & ditandai synced.');
+      }
+
+      // 3. Ambil & Upload Tasks lokal yang belum tersinkron
+      final unsyncedTasks = await _localTaskDS.getUnsyncedTasks();
+      print('📤 [SYNC] Ditemukan ${unsyncedTasks.length} tugas lokal belum tersinkron.');
+      for (final task in unsyncedTasks) {
+        print('   📤 Mengunggah tugas: "${task.title}" (${task.id})');
+        await _remoteDS.uploadTask(userId, task);
+        await _localTaskDS.markTaskAsSynced(task.id);
+        print('   ✅ Tugas "${task.title}" berhasil diunggah & ditandai synced.');
       }
 
       // ==========================================================
@@ -129,6 +143,33 @@ class SyncService {
             // Data cloud lebih baru, perbarui SQLite lokal
             await _localLogDS.insertOrUpdateLog(remoteLog);
             await _localLogDS.markLogAsSynced(remoteLog.id);
+          }
+        }
+      }
+
+      // 3. Tarik & Sinkronisasikan Tasks dari Cloud
+      final remoteTasks = await _remoteDS.fetchRemoteTasks(userId);
+      print('📥 [SYNC] Ditemukan ${remoteTasks.length} tugas di Cloud Firestore.');
+      for (final remoteTask in remoteTasks) {
+        final localTask = await _localTaskDS.getTaskById(remoteTask.id);
+        if (localTask == null) {
+          // Belum ada di SQLite lokal, langsung masukkan
+          print('   📥 Memasukkan tugas baru dari cloud: "${remoteTask.title}" (${remoteTask.id})');
+          await _localTaskDS.insertTask(remoteTask);
+          await _localTaskDS.markTaskAsSynced(remoteTask.id);
+          print('   ✅ Tugas "${remoteTask.title}" berhasil dimasukkan ke SQLite lokal.');
+        } else {
+          // Resolusi Konflik: Bandingkan updatedAt (Last Write Wins)
+          final remoteUpdate = remoteTask.updatedAt;
+          final localUpdate = localTask.updatedAt;
+
+          if (remoteUpdate.isAfter(localUpdate)) {
+            // Data cloud lebih baru, perbarui SQLite lokal
+            print('   🔃 Memperbarui tugas lokal dengan versi cloud: "${remoteTask.title}"');
+            await _localTaskDS.updateTask(remoteTask);
+            await _localTaskDS.markTaskAsSynced(remoteTask.id);
+          } else {
+            print('   ⏭️ Tugas "${remoteTask.title}" sudah up-to-date di lokal.');
           }
         }
       }

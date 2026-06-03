@@ -19,6 +19,13 @@ import '../features/tracking/domain/repositories/tracking_repository.dart';
 import '../features/tracking/domain/usecases/calculate_streak.dart';
 import '../features/tracking/domain/usecases/get_logs_for_habit.dart';
 import '../features/tracking/domain/usecases/track_habit_day.dart';
+import '../features/tasks/data/datasources/task_local_data_source.dart';
+import '../features/tasks/data/repositories/task_repository_impl.dart';
+import '../features/tasks/domain/repositories/task_repository.dart';
+import '../features/tasks/domain/usecases/create_task.dart';
+import '../features/tasks/domain/usecases/get_tasks.dart';
+import '../features/tasks/domain/usecases/update_task.dart';
+import '../features/tasks/domain/usecases/delete_task.dart';
 
 // ==========================================
 // 1. DATABASE & DATA SOURCES PROVIDERS
@@ -38,6 +45,11 @@ final trackingLocalDataSourceProvider = Provider<TrackingLocalDataSource>((ref) 
   return TrackingLocalDataSource(dbHelper);
 });
 
+final taskLocalDataSourceProvider = Provider<TaskLocalDataSource>((ref) {
+  final dbHelper = ref.watch(databaseHelperProvider);
+  return TaskLocalDataSource(dbHelper);
+});
+
 final trackingRemoteDataSourceProvider = Provider<TrackingRemoteDataSource>((ref) {
   return TrackingRemoteDataSource();
 });
@@ -45,11 +57,13 @@ final trackingRemoteDataSourceProvider = Provider<TrackingRemoteDataSource>((ref
 final syncServiceProvider = Provider<SyncService>((ref) {
   final localHabitDS = ref.watch(habitLocalDataSourceProvider);
   final localLogDS = ref.watch(trackingLocalDataSourceProvider);
+  final localTaskDS = ref.watch(taskLocalDataSourceProvider);
   final remoteDS = ref.watch(trackingRemoteDataSourceProvider);
   final calculateStreak = ref.watch(calculateStreakProvider);
   return SyncService(
     localHabitDS: localHabitDS,
     localLogDS: localLogDS,
+    localTaskDS: localTaskDS,
     remoteDS: remoteDS,
     calculateStreak: calculateStreak,
   );
@@ -68,6 +82,11 @@ final habitRepositoryProvider = Provider<HabitRepository>((ref) {
 final trackingRepositoryProvider = Provider<TrackingRepository>((ref) {
   final localDataSource = ref.watch(trackingLocalDataSourceProvider);
   return TrackingRepositoryImpl(localDataSource);
+});
+
+final taskRepositoryProvider = Provider<TaskRepository>((ref) {
+  final localDataSource = ref.watch(taskLocalDataSourceProvider);
+  return TaskRepositoryImpl(localDataSource);
 });
 
 // ==========================================
@@ -98,6 +117,27 @@ final updateHabitProvider = Provider<UpdateHabit>((ref) {
 final deleteHabitProvider = Provider<DeleteHabit>((ref) {
   final repository = ref.watch(habitRepositoryProvider);
   return DeleteHabit(repository);
+});
+
+// Tasks Usecases
+final createTaskProvider = Provider<CreateTask>((ref) {
+  final repository = ref.watch(taskRepositoryProvider);
+  return CreateTask(repository);
+});
+
+final getTasksProvider = Provider<GetTasks>((ref) {
+  final repository = ref.watch(taskRepositoryProvider);
+  return GetTasks(repository);
+});
+
+final updateTaskProvider = Provider<UpdateTask>((ref) {
+  final repository = ref.watch(taskRepositoryProvider);
+  return UpdateTask(repository);
+});
+
+final deleteTaskProvider = Provider<DeleteTask>((ref) {
+  final repository = ref.watch(taskRepositoryProvider);
+  return DeleteTask(repository);
 });
 
 // Tracking Usecases

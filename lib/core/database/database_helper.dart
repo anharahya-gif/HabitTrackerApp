@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 4, // Naikkan versi ke 4 untuk mendukung tipe pengingat (notifikasi vs alarm)
+      version: 5, // Naikkan versi ke 5 untuk mendukung fitur Tasks harian
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -81,6 +81,23 @@ class DatabaseHelper {
     
     // Opsional: Buat index untuk meningkatkan kecepatan pencarian log berdasarkan habit dan tanggal
     await db.execute('CREATE INDEX idx_logs_habit_date ON habit_logs (habit_id, date)');
+
+    // 4. Membuat tabel tasks untuk fitur Tugas Harian (to-do list)
+    await db.execute('''
+      CREATE TABLE tasks (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        due_date TEXT,
+        priority TEXT NOT NULL DEFAULT 'medium',
+        category TEXT NOT NULL DEFAULT 'Lainnya',
+        is_completed INTEGER NOT NULL DEFAULT 0,
+        completed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        is_synced INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
   }
 
   Future<bool> _columnExists(Database db, String tableName, String columnName) async {
@@ -122,6 +139,25 @@ class DatabaseHelper {
       if (!await _columnExists(db, 'habits', 'reminder_type')) {
         await db.execute("ALTER TABLE habits ADD COLUMN reminder_type TEXT NOT NULL DEFAULT 'notification'");
       }
+    }
+
+    if (oldVersion < 5) {
+      // Buat tabel tasks jika belum ada
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS tasks (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          description TEXT,
+          due_date TEXT,
+          priority TEXT NOT NULL DEFAULT 'medium',
+          category TEXT NOT NULL DEFAULT 'Lainnya',
+          is_completed INTEGER NOT NULL DEFAULT 0,
+          completed_at TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          is_synced INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
     }
   }
 
