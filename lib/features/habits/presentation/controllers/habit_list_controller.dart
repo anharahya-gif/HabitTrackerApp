@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/usecase/usecase.dart';
@@ -29,9 +30,21 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
     );
   }
 
-  /// Memuat ulang daftar habit dari database SQLite.
+  /// Memuat ulang daftar habit dari database SQLite dan sinkronisasi Cloud.
   Future<void> refresh() async {
     state = const AsyncValue.loading();
+
+    // Jalankan Cloud Sync secara aktif saat user melakukan pull-to-refresh (jika terautentikasi)
+    final authState = ref.read(authControllerProvider);
+    final user = authState.valueOrNull;
+    if (user != null && user.isAuthenticated) {
+      try {
+        await ref.read(syncServiceProvider).syncData(user.id);
+      } catch (e) {
+        debugPrint('Gagal sinkronisasi cloud saat pull-to-refresh: $e');
+      }
+    }
+
     state = await AsyncValue.guard(() => _fetchHabits());
   }
 
@@ -43,7 +56,11 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
     if (result is Success<void>) {
       // Jadwalkan notifikasi untuk habit baru jika ada reminderTime
       if (habit.reminderTime != null) {
-        await NotificationService.scheduleHabitNotification(habit);
+        try {
+          await NotificationService.scheduleHabitNotification(habit);
+        } catch (e) {
+          debugPrint('Gagal menjadwalkan notifikasi habit baru: $e');
+        }
       }
       await refresh();
       _triggerBackgroundSync();
@@ -58,10 +75,14 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
 
     if (result is Success<void>) {
       // Jadwalkan ulang atau batalkan notifikasi sesuai reminderTime terbaru
-      if (habit.reminderTime != null && !habit.isArchived) {
-        await NotificationService.scheduleHabitNotification(habit);
-      } else {
-        await NotificationService.cancelHabitNotification(habit.id);
+      try {
+        if (habit.reminderTime != null && !habit.isArchived) {
+          await NotificationService.scheduleHabitNotification(habit);
+        } else {
+          await NotificationService.cancelHabitNotification(habit.id);
+        }
+      } catch (e) {
+        debugPrint('Gagal memperbarui/membatalkan notifikasi habit: $e');
       }
       await refresh();
       _triggerBackgroundSync();
