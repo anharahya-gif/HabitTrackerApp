@@ -31,7 +31,7 @@ class CollapsibleSidebar extends ConsumerWidget {
         ? double.infinity
         : (isCollapsed ? 82.0 : 260.0);
 
-    return AnimatedContainer(
+    Widget sidebarContent = AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeInOut,
       width: width,
@@ -52,7 +52,7 @@ class CollapsibleSidebar extends ConsumerWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // 1. Header (Logo & Toggle Button)
+            // 1. Header (Logo)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
               child: Row(
@@ -88,27 +88,6 @@ class CollapsibleSidebar extends ConsumerWidget {
                       ],
                     ],
                   ),
-                  // Tombol Toggle Collapse (Hanya tampil jika bukan di Drawer mobile)
-                  if (!isDrawer && !isCollapsed)
-                    IconButton(
-                      icon: const Icon(Icons.keyboard_double_arrow_left_rounded, size: 20),
-                      onPressed: () {
-                        ref.read(sidebarCollapsedProvider.notifier).state = true;
-                      },
-                      style: IconButton.styleFrom(
-                        hoverColor: theme.colorScheme.primary.withOpacity(0.08),
-                      ),
-                    ),
-                  if (!isDrawer && isCollapsed)
-                    IconButton(
-                      icon: const Icon(Icons.keyboard_double_arrow_right_rounded, size: 20),
-                      onPressed: () {
-                        ref.read(sidebarCollapsedProvider.notifier).state = false;
-                      },
-                      style: IconButton.styleFrom(
-                        hoverColor: theme.colorScheme.primary.withOpacity(0.08),
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -257,6 +236,58 @@ class CollapsibleSidebar extends ConsumerWidget {
           ],
         ),
       ),
+    );
+
+    if (isDrawer) {
+      return sidebarContent;
+    }
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        sidebarContent,
+        Positioned(
+          right: -14,
+          top: 30, // Aligned with the header logo
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                ref.read(sidebarCollapsedProvider.notifier).state = !isCollapsed;
+              },
+              customBorder: const CircleBorder(),
+              child: Ink(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: theme.brightness == Brightness.dark
+                      ? const Color(0xff1f242e)
+                      : theme.colorScheme.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withOpacity(0.15),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  isCollapsed
+                      ? Icons.chevron_right_rounded
+                      : Icons.chevron_left_rounded,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -108,11 +108,27 @@ class DashboardPage extends ConsumerWidget {
                             children: [
                               if (isMobile) ...[
                                 Builder(
-                                  builder: (context) => IconButton(
-                                    icon: const Icon(Icons.menu_rounded, size: 28),
-                                    onPressed: () => Scaffold.of(context).openDrawer(),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
+                                  builder: (context) => Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).brightness == Brightness.dark
+                                          ? Colors.white.withOpacity(0.05)
+                                          : Colors.black.withOpacity(0.05),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? Colors.white.withOpacity(0.08)
+                                            : Colors.black.withOpacity(0.08),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(Icons.menu_rounded, size: 24),
+                                      onPressed: () => Scaffold.of(context).openDrawer(),
+                                      constraints: const BoxConstraints(),
+                                      style: IconButton.styleFrom(
+                                        padding: const EdgeInsets.all(8),
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),

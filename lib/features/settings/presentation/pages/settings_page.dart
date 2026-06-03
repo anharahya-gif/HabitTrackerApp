@@ -38,9 +38,29 @@ class SettingsPage extends ConsumerWidget {
           title: const Text('Pengaturan'),
           leading: isMobile
               ? Builder(
-                  builder: (context) => IconButton(
-                    icon: const Icon(Icons.menu_rounded),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
+                  builder: (context) => Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.05)
+                            : Colors.black.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white.withOpacity(0.08)
+                              : Colors.black.withOpacity(0.08),
+                          width: 1,
+                        ),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.menu_rounded, size: 20),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                        style: IconButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ),
                   ),
                 )
               : null,
