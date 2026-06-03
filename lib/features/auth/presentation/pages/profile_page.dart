@@ -31,7 +31,6 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
-    final theme = Theme.of(context);
 
     final isMobile = MediaQuery.of(context).size.width < 600;
 
@@ -42,7 +41,9 @@ class ProfilePage extends ConsumerWidget {
         context.go('/home');
       },
       child: Scaffold(
-        backgroundColor: const Color(0xff111318), // Background Calm Productivity Dark
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xff111318)
+            : Theme.of(context).scaffoldBackgroundColor,
         drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
         appBar: AppBar(
           title: const Text('Profil Dailio'),
@@ -100,6 +101,10 @@ class ProfilePage extends ConsumerWidget {
   /// Membangun antarmuka konten profil utama
   Widget _buildProfileContent(BuildContext context, WidgetRef ref, AppUser user, List<Habit> habits, List<Task> tasks) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xff1a1d24) : theme.colorScheme.surface;
+    final textPrimary = isDark ? const Color(0xffe2e8f0) : theme.colorScheme.onSurface;
+    final textSecondary = isDark ? const Color(0xff94a3b8) : theme.colorScheme.onSurface.withOpacity(0.6);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -127,7 +132,7 @@ class ProfilePage extends ConsumerWidget {
                   ),
                   child: CircleAvatar(
                     radius: 56,
-                    backgroundColor: const Color(0xff1a1d24),
+                    backgroundColor: cardColor,
                     backgroundImage: user.photoUrl != null 
                         ? NetworkImage(user.photoUrl!) 
                         : null,
@@ -146,7 +151,7 @@ class ProfilePage extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: user.isAuthenticated ? AppTheme.statusDone : AppTheme.accentPrimary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xff111318), width: 2),
+                    border: Border.all(color: isDark ? const Color(0xff111318) : theme.scaffoldBackgroundColor, width: 2),
                   ),
                   child: Icon(
                     user.isAuthenticated ? Icons.verified : Icons.lock_outline,
@@ -162,10 +167,10 @@ class ProfilePage extends ConsumerWidget {
           // Nama Pengguna
           Text(
             user.displayName,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xffe2e8f0),
+              color: textPrimary,
               letterSpacing: -0.5,
             ),
           ),
@@ -174,9 +179,9 @@ class ProfilePage extends ConsumerWidget {
           // Email Pengguna
           Text(
             user.email,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Color(0xff94a3b8),
+              color: textSecondary,
             ),
           ),
           const SizedBox(height: 32),
@@ -186,7 +191,7 @@ class ProfilePage extends ConsumerWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xff1a1d24),
+              color: cardColor,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: user.isAuthenticated 
@@ -220,10 +225,10 @@ class ProfilePage extends ConsumerWidget {
                     children: [
                       Text(
                         user.isAuthenticated ? 'Cloud Sinkronisasi Aktif' : 'Mode Tamu (Guest Mode)',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          color: Color(0xffe2e8f0),
+                          color: textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -231,9 +236,9 @@ class ProfilePage extends ConsumerWidget {
                         user.isAuthenticated 
                             ? 'Seluruh data habit Anda tersimpan di cloud & siap diakses dari HP mana pun.'
                             : 'Aplikasi berjalan offline. Data habit Anda tersimpan dengan aman di SQLite lokal Anda.',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xff94a3b8),
+                          color: textSecondary,
                           height: 1.4,
                         ),
                       ),
@@ -685,51 +690,58 @@ class ProfilePage extends ConsumerWidget {
 
   /// Membangun kartu cadangan lokal untuk melakukan ekspor & impor CSV
   Widget _buildBackupSection(BuildContext context, WidgetRef ref, List<Habit> habits, List<Task> tasks) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xff1a1d24) : theme.colorScheme.surface;
+    final borderColor = isDark ? const Color(0xff2e3342) : const Color(0xffe2e8f0);
+    final textPrimary = isDark ? const Color(0xffe2e8f0) : theme.colorScheme.onSurface;
+    final textSecondary = isDark ? const Color(0xff94a3b8) : theme.colorScheme.onSurface.withOpacity(0.6);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xff1a1d24),
+        color: cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xff2e3342),
+          color: borderColor,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.table_chart_outlined, color: AppTheme.statusSkipped, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.table_chart_outlined, color: AppTheme.statusSkipped, size: 20),
+              const SizedBox(width: 8),
               Text(
                 'Cadangan Data Lokal',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
-                  color: Color(0xffe2e8f0),
+                  color: textPrimary,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Ekspor atau impor data Dailio Anda secara mandiri menggunakan file format .csv (Excel).',
             style: TextStyle(
               fontSize: 12,
-              color: Color(0xff94a3b8),
+              color: textSecondary,
               height: 1.4,
             ),
           ),
           const SizedBox(height: 20),
           
           // --- HABITS SECTION ---
-          const Text(
+          Text(
             'Data Kebiasaan (Habits)',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 13,
-              color: Color(0xffe2e8f0),
+              color: textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -743,7 +755,7 @@ class ProfilePage extends ConsumerWidget {
                     onPressed: () => _exportHabits(context, habits),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.accentPrimary,
-                      side: const BorderSide(color: Color(0xff2e3342)),
+                      side: BorderSide(color: borderColor),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -783,16 +795,16 @@ class ProfilePage extends ConsumerWidget {
           ),
           
           const SizedBox(height: 20),
-          const Divider(color: Color(0xff2e3342)),
+          Divider(color: borderColor),
           const SizedBox(height: 12),
 
           // --- TASKS SECTION ---
-          const Text(
+          Text(
             'Data Tugas (Tasks)',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 13,
-              color: Color(0xffe2e8f0),
+              color: textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -806,7 +818,7 @@ class ProfilePage extends ConsumerWidget {
                     onPressed: () => _exportTasks(context, tasks),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.statusSkipped,
-                      side: const BorderSide(color: Color(0xff2e3342)),
+                      side: BorderSide(color: borderColor),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
