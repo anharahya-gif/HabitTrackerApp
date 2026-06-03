@@ -9,9 +9,12 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../core/utils/csv_habit_helper.dart';
+import '../../../../core/utils/csv_task_helper.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../habits/domain/entities/habit.dart';
 import '../../../habits/presentation/controllers/habit_list_controller.dart';
+import '../../../tasks/domain/entities/task.dart';
+import '../../../tasks/presentation/controllers/task_list_controller.dart';
 import '../../domain/entities/app_user.dart';
 import '../controllers/auth_controller.dart';
 import '../../../../shared/providers.dart';
@@ -86,7 +89,8 @@ class ProfilePage extends ConsumerWidget {
           error: (error, _) => _buildErrorScreen(context, ref, error.toString()),
           data: (user) {
             final habits = ref.watch(habitListProvider).valueOrNull ?? [];
-            return _buildProfileContent(context, ref, user, habits);
+            final tasks = ref.watch(taskListProvider).valueOrNull ?? [];
+            return _buildProfileContent(context, ref, user, habits, tasks);
           },
         ),
       ),
@@ -94,7 +98,7 @@ class ProfilePage extends ConsumerWidget {
   }
 
   /// Membangun antarmuka konten profil utama
-  Widget _buildProfileContent(BuildContext context, WidgetRef ref, AppUser user, List<Habit> habits) {
+  Widget _buildProfileContent(BuildContext context, WidgetRef ref, AppUser user, List<Habit> habits, List<Task> tasks) {
     final theme = Theme.of(context);
 
     return SingleChildScrollView(
@@ -250,6 +254,7 @@ class ProfilePage extends ConsumerWidget {
                                 
                                 // Refresh data lokal di UI setelah sukses ditarik/unggah
                                 ref.read(habitListProvider.notifier).refresh();
+                                ref.read(taskListProvider.notifier).refresh();
                                 
                                 // Invalidate semua streak & log provider agar UI terupdate
                                 final habits = ref.read(habitListProvider).valueOrNull ?? [];
@@ -300,7 +305,7 @@ class ProfilePage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // 2.5. Cadangan Data Lokal (.xml) Ekspor & Impor
-          _buildBackupSection(context, ref, habits),
+          _buildBackupSection(context, ref, habits, tasks),
 
           if (kDebugMode) ...[
             const SizedBox(height: 24),
@@ -679,7 +684,7 @@ class ProfilePage extends ConsumerWidget {
   }
 
   /// Membangun kartu cadangan lokal untuk melakukan ekspor & impor CSV
-  Widget _buildBackupSection(BuildContext context, WidgetRef ref, List<Habit> habits) {
+  Widget _buildBackupSection(BuildContext context, WidgetRef ref, List<Habit> habits, List<Task> tasks) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -709,20 +714,31 @@ class ProfilePage extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Ekspor atau impor data kebiasaan Dailio Anda secara mandiri menggunakan file format .csv (Excel).',
+            'Ekspor atau impor data Dailio Anda secara mandiri menggunakan file format .csv (Excel).',
             style: TextStyle(
               fontSize: 12,
               color: Color(0xff94a3b8),
               height: 1.4,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          
+          // --- HABITS SECTION ---
+          const Text(
+            'Data Kebiasaan (Habits)',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Color(0xffe2e8f0),
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
-              // Tombol Ekspor
+              // Tombol Ekspor Habits
               Expanded(
                 child: SizedBox(
-                  height: 44,
+                  height: 40,
                   child: OutlinedButton.icon(
                     onPressed: () => _exportHabits(context, habits),
                     style: OutlinedButton.styleFrom(
@@ -735,17 +751,17 @@ class ProfilePage extends ConsumerWidget {
                     icon: const Icon(Icons.upload_outlined, size: 16),
                     label: const Text(
                       'Ekspor (.csv)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               
-              // Tombol Impor
+              // Tombol Impor Habits
               Expanded(
                 child: SizedBox(
-                  height: 44,
+                  height: 40,
                   child: ElevatedButton.icon(
                     onPressed: () => _importHabits(context, ref),
                     style: ElevatedButton.styleFrom(
@@ -758,7 +774,70 @@ class ProfilePage extends ConsumerWidget {
                     icon: const Icon(Icons.download_outlined, size: 16),
                     label: const Text(
                       'Impor (.csv)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 20),
+          const Divider(color: Color(0xff2e3342)),
+          const SizedBox(height: 12),
+
+          // --- TASKS SECTION ---
+          const Text(
+            'Data Tugas (Tasks)',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Color(0xffe2e8f0),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              // Tombol Ekspor Tasks
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _exportTasks(context, tasks),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.statusSkipped,
+                      side: const BorderSide(color: Color(0xff2e3342)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.upload_outlined, size: 16),
+                    label: const Text(
+                      'Ekspor (.csv)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              
+              // Tombol Impor Tasks
+              Expanded(
+                child: SizedBox(
+                  height: 40,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _importTasks(context, ref),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.statusSkipped,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: const Icon(Icons.download_outlined, size: 16),
+                    label: const Text(
+                      'Impor (.csv)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                   ),
                 ),
@@ -851,6 +930,91 @@ class ProfilePage extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Berhasil memulihkan $successCount dari ${importedHabits.length} kebiasaan! 🎉'),
+          backgroundColor: AppTheme.statusDone,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengimpor data. Pastikan format CSV sesuai.\nError: $e'),
+          backgroundColor: AppTheme.statusMissed,
+        ),
+      );
+    }
+  }
+
+  /// Proses mengekspor tasks lokal ke file CSV dan membagikannya via Share Sheet
+  Future<void> _exportTasks(BuildContext context, List<Task> tasks) async {
+    if (tasks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda belum memiliki tugas untuk diekspor.'),
+          backgroundColor: AppTheme.statusSkipped,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final csvString = CsvTaskHelper.tasksToCsv(tasks);
+
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/dailio_tasks_backup.csv');
+      await file.writeAsString(csvString);
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Dailio Tasks Backup (.csv)',
+        text: 'Berikut adalah file backup daftar tugas Dailio saya! 📋',
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengekspor data: $e'),
+          backgroundColor: AppTheme.statusMissed,
+        ),
+      );
+    }
+  }
+
+  /// Proses mengimpor file CSV tugas dari storage lokal dan memasukkannya ke database SQLite
+  Future<void> _importTasks(BuildContext context, WidgetRef ref) async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+      );
+
+      if (result == null || result.files.single.path == null) {
+        return;
+      }
+
+      final file = File(result.files.single.path!);
+      final csvContent = await file.readAsString();
+
+      final importedTasks = CsvTaskHelper.csvToTasks(csvContent);
+
+      if (importedTasks.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('File CSV kosong atau tidak sesuai dengan format ekspor tugas Dailio.'),
+            backgroundColor: AppTheme.statusSkipped,
+          ),
+        );
+        return;
+      }
+
+      int successCount = 0;
+      for (final task in importedTasks) {
+        final res = await ref.read(taskListProvider.notifier).addTask(task);
+        if (res is Success<void>) {
+          successCount++;
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Berhasil memulihkan $successCount dari ${importedTasks.length} tugas! 🎉'),
           backgroundColor: AppTheme.statusDone,
         ),
       );

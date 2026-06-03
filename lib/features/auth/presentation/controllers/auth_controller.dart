@@ -5,6 +5,7 @@ import '../../domain/repositories/auth_repository.dart';
 import '../../../../shared/providers.dart';
 import '../../../tracking/data/services/sync_service.dart';
 import '../../../habits/presentation/controllers/habit_list_controller.dart';
+import '../../../tasks/presentation/controllers/task_list_controller.dart';
 
 /// Provider singleton untuk repositori autentikasi
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -42,6 +43,7 @@ class AuthController extends StateNotifier<AsyncValue<AppUser>> {
                 _ref.invalidate(habitTodayLogProvider(h.id));
               }
             }).catchError((_) {});
+            _ref.read(taskListProvider.notifier).refresh().catchError((_) {});
           }).catchError((_) {});
         }
       },
@@ -66,6 +68,7 @@ class AuthController extends StateNotifier<AsyncValue<AppUser>> {
                 _ref.invalidate(habitTodayLogProvider(h.id));
               }
             }).catchError((_) {});
+            _ref.read(taskListProvider.notifier).refresh().catchError((_) {});
           }).catchError((_) {});
         }
       },
@@ -85,6 +88,7 @@ class AuthController extends StateNotifier<AsyncValue<AppUser>> {
         state = const AsyncValue.data(AppUser.guest);
         // Segarkan data lokal di UI agar kembali bersih ke Guest Mode
         _ref.read(habitListProvider.notifier).refresh().catchError((_) {});
+        _ref.read(taskListProvider.notifier).refresh().catchError((_) {});
       },
       onFailure: (fail) {
         state = AsyncValue.error(fail.message, StackTrace.current);

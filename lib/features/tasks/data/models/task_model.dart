@@ -42,19 +42,23 @@ class TaskModel extends Task {
   factory TaskModel.fromFirestoreMap(Map<String, dynamic> map, String docId) {
     return TaskModel(
       id: docId,
-      title: map['title'] as String,
+      title: map['title'] as String? ?? '',
       description: map['description'] as String?,
-      dueDate: map['due_date'] != null && (map['due_date'] as String).isNotEmpty
-          ? DateTime.parse(map['due_date'] as String)
+      dueDate: map['due_date'] != null && map['due_date'] is String && (map['due_date'] as String).isNotEmpty
+          ? DateTime.tryParse(map['due_date'] as String)
           : null,
       priority: map['priority'] as String? ?? 'medium',
       category: map['category'] as String? ?? 'Lainnya',
       isCompleted: map['is_completed'] as bool? ?? false,
-      completedAt: map['completed_at'] != null && (map['completed_at'] as String).isNotEmpty
-          ? DateTime.parse(map['completed_at'] as String)
+      completedAt: map['completed_at'] != null && map['completed_at'] is String && (map['completed_at'] as String).isNotEmpty
+          ? DateTime.tryParse(map['completed_at'] as String)
           : null,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      updatedAt: DateTime.parse(map['updated_at'] as String),
+      createdAt: map['created_at'] != null && map['created_at'] is String && (map['created_at'] as String).isNotEmpty
+          ? (DateTime.tryParse(map['created_at'] as String) ?? DateTime.now())
+          : DateTime.now(),
+      updatedAt: map['updated_at'] != null && map['updated_at'] is String && (map['updated_at'] as String).isNotEmpty
+          ? (DateTime.tryParse(map['updated_at'] as String) ?? DateTime.now())
+          : DateTime.now(),
       isSynced: true, // Synced because it is fetched from Firestore
     );
   }

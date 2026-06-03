@@ -6,9 +6,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../../core/utils/csv_habit_helper.dart';
+import '../../../../core/utils/csv_task_helper.dart';
 import '../../../../core/utils/notification_service.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../habits/presentation/controllers/habit_list_controller.dart';
+import '../../../tasks/presentation/controllers/task_list_controller.dart';
+import '../../../tasks/domain/entities/task.dart';
 import '../../../../core/errors/failure.dart';
 import '../../../../shared/widgets/collapsible_sidebar.dart';
 
@@ -20,6 +23,7 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final habits = ref.watch(habitListProvider).valueOrNull ?? [];
+    final tasks = ref.watch(taskListProvider).valueOrNull ?? [];
 
     final isMobile = MediaQuery.of(context).size.width < 600;
 
@@ -201,8 +205,8 @@ class SettingsPage extends ConsumerWidget {
               ),
               const SizedBox(height: 28),
   
-              // 3. Seksi Data
-              _buildSectionTitle(context, 'Pencadangan Data'),
+              // 3. Seksi Data Habits
+              _buildSectionTitle(context, 'Pencadangan Data Kebiasaan (Habits)'),
               const SizedBox(height: 12),
               _buildSettingsCard(
                 context,
@@ -215,7 +219,7 @@ class SettingsPage extends ConsumerWidget {
                         child: const Icon(Icons.upload_file_rounded, color: AppTheme.statusSkipped),
                       ),
                       title: const Text(
-                        'Ekspor Data ke CSV',
+                        'Ekspor Kebiasaan ke CSV',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                       subtitle: const Text(
@@ -232,7 +236,7 @@ class SettingsPage extends ConsumerWidget {
                         child: const Icon(Icons.download_rounded, color: AppTheme.statusDone),
                       ),
                       title: const Text(
-                        'Impor Data dari CSV',
+                        'Impor Kebiasaan dari CSV',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                       ),
                       subtitle: const Text(
@@ -240,6 +244,51 @@ class SettingsPage extends ConsumerWidget {
                         style: TextStyle(fontSize: 11),
                       ),
                       onTap: () => _importHabits(context, ref),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+  
+              // Seksi Data Tasks
+              _buildSectionTitle(context, 'Pencadangan Data Tugas (Tasks)'),
+              const SizedBox(height: 12),
+              _buildSettingsCard(
+                context,
+                child: Column(
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: AppTheme.statusSkipped.withOpacity(0.1),
+                        child: const Icon(Icons.upload_file_rounded, color: AppTheme.statusSkipped),
+                      ),
+                      title: const Text(
+                        'Ekspor Tugas ke CSV',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: const Text(
+                        'Cadangkan data tugas Anda ke berkas .csv secara lokal.',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                      onTap: () => _exportTasks(context, tasks),
+                    ),
+                    const Divider(height: 16),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: AppTheme.statusDone.withOpacity(0.1),
+                        child: const Icon(Icons.download_rounded, color: AppTheme.statusDone),
+                      ),
+                      title: const Text(
+                        'Impor Tugas dari CSV',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: const Text(
+                        'Pulihkan data tugas Anda dari berkas ekspor cadangan Dailio.',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                      onTap: () => _importTasks(context, ref),
                     ),
                   ],
                 ),
@@ -374,6 +423,89 @@ class SettingsPage extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Berhasil memulihkan $successCount dari ${importedHabits.length} kebiasaan! 🎉'),
+          backgroundColor: AppTheme.statusDone,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengimpor data. Pastikan format CSV sesuai.\nError: $e'),
+          backgroundColor: AppTheme.statusMissed,
+        ),
+      );
+    }
+  }
+
+  Future<void> _exportTasks(BuildContext context, List<Task> tasks) async {
+    if (tasks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Anda belum memiliki tugas untuk diekspor.'),
+          backgroundColor: AppTheme.statusSkipped,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final csvString = CsvTaskHelper.tasksToCsv(tasks);
+
+      final directory = await getTemporaryDirectory();
+      final file = File('${directory.path}/dailio_tasks_backup.csv');
+      await file.writeAsString(csvString);
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'Dailio Tasks Backup (.csv)',
+        text: 'Berikut adalah file backup daftar tugas Dailio saya! 📋',
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengekspor data: $e'),
+          backgroundColor: AppTheme.statusMissed,
+        ),
+      );
+    }
+  }
+
+  Future<void> _importTasks(BuildContext context, WidgetRef ref) async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+      );
+
+      if (result == null || result.files.single.path == null) {
+        return;
+      }
+
+      final file = File(result.files.single.path!);
+      final csvContent = await file.readAsString();
+
+      final importedTasks = CsvTaskHelper.csvToTasks(csvContent);
+
+      if (importedTasks.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('File CSV kosong atau tidak sesuai dengan format ekspor tugas Dailio.'),
+            backgroundColor: AppTheme.statusSkipped,
+          ),
+        );
+        return;
+      }
+
+      int successCount = 0;
+      for (final task in importedTasks) {
+        final res = await ref.read(taskListProvider.notifier).addTask(task);
+        if (res is Success<void>) {
+          successCount++;
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Berhasil memulihkan $successCount dari ${importedTasks.length} tugas! 🎉'),
           backgroundColor: AppTheme.statusDone,
         ),
       );
