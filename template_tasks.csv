@@ -1,0 +1,4 @@
+id,title,description,due_date,priority,category,is_completed,completed_at,created_at,updated_at
+task-1,"Beli Bahan Makanan","Membeli susu segar, roti gandum, buah apel, dan telur di supermarket.","2026-06-05T23:59:00.000Z","medium","Belanja",0,,"2026-06-03T12:00:00.000Z","2026-06-03T12:00:00.000Z"
+task-2,"Selesaikan Laporan Keuangan","Menyusun laporan arus kas bulanan dan mengirimkannya ke manajer.","2026-06-04T17:00:00.000Z","high","Kerja",1,"2026-06-03T16:30:00.000Z","2026-06-03T10:00:00.000Z","2026-06-03T16:30:00.000Z"
+task-3,"Olahraga Sore","Latihan angkat beban di gym selama 45 menit.","2026-06-03T18:00:00.000Z","low","Kesehatan",0,,"2026-06-03T15:00:00.000Z","2026-06-03T15:00:00.000Z"

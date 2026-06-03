@@ -1,0 +1,4 @@
+id,name,description,category,type,created_at,is_archived,reminder_time,color,start_time,end_time,reminder_type
+habit-1,"Minum Air Putih","Minum minimal 8 gelas air sehari untuk menjaga hidrasi tubuh.","Kesehatan","daily","2026-06-03T07:00:00.000Z",0,"07:00",4284128256,,,"notification"
+habit-2,"Olahraga Pagi","Lari santai 30 menit mengitari taman kompleks.","Kesehatan","daily","2026-06-03T06:00:00.000Z",0,"06:30",4294917424,"06:00","07:00","alarm"
+habit-3,"Membaca Buku","Membaca minimal 10 halaman buku pengembangan diri.","Pendidikan","daily","2026-06-03T21:00:00.000Z",0,"21:00",4278241472,,,"notification"
