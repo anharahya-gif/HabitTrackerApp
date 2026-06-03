@@ -160,7 +160,7 @@ class TaskListPage extends ConsumerWidget {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final task = tasks[index];
-                          return _TaskItemWidget(task: task);
+                          return TaskItemWidget(task: task);
                         },
                         childCount: tasks.length,
                       ),
@@ -177,7 +177,7 @@ class TaskListPage extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showTaskFormBottomSheet(context, ref),
+        onPressed: () => showTaskFormBottomSheet(context, ref),
         icon: const Icon(Icons.playlist_add_rounded),
         label: const Text('Tugas Baru'),
       ),
@@ -358,10 +358,10 @@ class _EmptyTasksState extends StatelessWidget {
 }
 
 /// Single Task item rendering.
-class _TaskItemWidget extends ConsumerWidget {
+class TaskItemWidget extends ConsumerWidget {
   final Task task;
 
-  const _TaskItemWidget({required this.task});
+  const TaskItemWidget({required this.task});
 
   Color _getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
@@ -405,7 +405,7 @@ class _TaskItemWidget extends ConsumerWidget {
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => _showTaskFormBottomSheet(context, ref, task: task),
+          onTap: () => showTaskFormBottomSheet(context, ref, task: task),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -784,7 +784,7 @@ class _SortChip extends StatelessWidget {
 }
 
 /// Shows the Add/Edit Task Bottom Sheet.
-void _showTaskFormBottomSheet(BuildContext context, WidgetRef ref, {Task? task}) {
+void showTaskFormBottomSheet(BuildContext context, WidgetRef ref, {Task? task}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -793,21 +793,21 @@ void _showTaskFormBottomSheet(BuildContext context, WidgetRef ref, {Task? task})
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (context) {
-      return _TaskFormBottomSheet(task: task);
+      return TaskFormBottomSheet(task: task);
     },
   );
 }
 
-class _TaskFormBottomSheet extends ConsumerStatefulWidget {
+class TaskFormBottomSheet extends ConsumerStatefulWidget {
   final Task? task;
 
-  const _TaskFormBottomSheet({this.task});
+  const TaskFormBottomSheet({this.task});
 
   @override
-  ConsumerState<_TaskFormBottomSheet> createState() => _TaskFormBottomSheetState();
+  ConsumerState<TaskFormBottomSheet> createState() => TaskFormBottomSheetState();
 }
 
-class _TaskFormBottomSheetState extends ConsumerState<_TaskFormBottomSheet> {
+class TaskFormBottomSheetState extends ConsumerState<TaskFormBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;

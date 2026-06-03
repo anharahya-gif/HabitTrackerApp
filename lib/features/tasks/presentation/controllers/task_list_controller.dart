@@ -210,3 +210,25 @@ final filteredTasksProvider = Provider<AsyncValue<List<Task>>>((ref) {
     return resultList;
   });
 });
+
+/// Reactive provider that returns tasks that are actionable today or overdue.
+final todayTasksProvider = Provider<AsyncValue<List<Task>>>((ref) {
+  final tasksAsync = ref.watch(taskListProvider);
+  return tasksAsync.whenData((tasks) {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+    return tasks.where((task) {
+      if (!task.isCompleted) {
+        // Belum selesai: tampilkan jika tidak ada due date OR due date <= hari ini
+        if (task.dueDate == null) return true;
+        return task.dueDate!.isBefore(todayEnd);
+      } else {
+        // Sudah selesai: tampilkan HANYA jika diselesaikan hari ini
+        if (task.completedAt == null) return false;
+        return task.completedAt!.isAfter(todayStart) && task.completedAt!.isBefore(todayEnd);
+      }
+    }).toList();
+  });
+});

@@ -8,6 +8,9 @@ import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/habit_list_controller.dart';
 import '../widgets/habit_item_widget.dart';
 import '../../../../shared/widgets/collapsible_sidebar.dart';
+import '../../../tasks/domain/entities/task.dart';
+import '../../../tasks/presentation/controllers/task_list_controller.dart';
+import '../../../tasks/presentation/pages/task_list_page.dart';
 
 /// Provider reaktif untuk memperbarui jam setiap 10 detik secara background
 final currentTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
@@ -68,6 +71,7 @@ class HabitListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final habitsAsync = ref.watch(filteredHabitsProvider);
+    final tasksAsync = ref.watch(todayTasksProvider);
     final authState = ref.watch(authControllerProvider);
     final user = authState.valueOrNull ?? AppUser.guest;
     
@@ -213,15 +217,15 @@ class HabitListPage extends ConsumerWidget {
                 ),
               ),
 
-              // Title Section
+              // 1. Kebiasaan Hari Ini Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                  padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 8.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Habit Aktif Anda',
+                        'Kebiasaan Hari Ini',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -260,36 +264,24 @@ class HabitListPage extends ConsumerWidget {
                 ),
               ),
 
-              // Daftar Habit Utama
+              // 2. Daftar Kebiasaan Hari Ini
               habitsAsync.when(
-                loading: () => const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
+                loading: () => const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
                 ),
-                error: (error, _) => SliverFillRemaining(
+                error: (error, _) => SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                          const SizedBox(height: 16),
-                          Text('Gagal memuat: $error', textAlign: TextAlign.center),
-                          const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: () => ref.read(habitListProvider.notifier).refresh(),
-                            child: const Text('Coba Lagi'),
-                          )
-                        ],
-                      ),
-                    ),
+                    child: Center(child: Text('Gagal memuat kebiasaan: $error')),
                   ),
                 ),
                 data: (habits) {
                   if (habits.isEmpty) {
-                    return const SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _EmptyHabitState(),
+                    return const SliverToBoxAdapter(
+                      child: _SmallEmptyHabitState(),
                     );
                   }
 
@@ -307,6 +299,56 @@ class HabitListPage extends ConsumerWidget {
                   );
                 },
               ),
+
+              // 3. Tugas Hari Ini Header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 24.0, bottom: 12.0),
+                  child: Text(
+                    'Tugas Hari Ini & Tertunda',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ),
+              ),
+
+              // 4. Daftar Tugas Hari Ini
+              tasksAsync.when(
+                loading: () => const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+                error: (error, _) => SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Center(child: Text('Gagal memuat tugas: $error')),
+                  ),
+                ),
+                data: (tasks) {
+                  if (tasks.isEmpty) {
+                    return const SliverToBoxAdapter(
+                      child: _SmallEmptyTaskState(),
+                    );
+                  }
+
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final task = tasks[index];
+                          return TaskItemWidget(task: task);
+                        },
+                        childCount: tasks.length,
+                      ),
+                    ),
+                  );
+                },
+              ),
               
               // Spacing Bawah untuk FAB agar tidak menghalangi item paling bawah
               const SliverToBoxAdapter(
@@ -318,10 +360,10 @@ class HabitListPage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          context.push('/add-habit');
+          _showAddOptionsBottomSheet(context, ref);
         },
         icon: const Icon(Icons.add),
-        label: const Text('Habit Baru'),
+        label: const Text('Tambah Baru'),
       ),
     );
   }
@@ -334,71 +376,149 @@ class _StatsBannerCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final habitsAsync = ref.watch(habitListProvider);
+    final tasksAsync = ref.watch(todayTasksProvider);
 
     return habitsAsync.maybeWhen(
       data: (habits) {
-        if (habits.isEmpty) return const SizedBox.shrink();
-        
-        final totalHabits = habits.length;
-        
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).primaryColor,
-                Theme.of(context).primaryColor.withOpacity(0.7),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).primaryColor.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              )
-            ]
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Progres Harian',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+        return tasksAsync.maybeWhen(
+          data: (tasks) {
+            if (habits.isEmpty && tasks.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).primaryColor,
+                      Theme.of(context).primaryColor.withOpacity(0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '$totalHabits Kebiasaan Menunggumu!',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  letterSpacing: -0.2,
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Mulai Hari Produktifmu! 🌟',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Ketuk tombol di bawah untuk membuat habit pertama Anda, atau klik menu sidebar untuk beralih ke Tugas Harian.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
+              );
+            }
+
+            final totalHabits = habits.length;
+            final completedHabits = habits.where((habit) {
+              final logAsync = ref.watch(habitTodayLogProvider(habit.id));
+              return logAsync.valueOrNull?.status == 'done';
+            }).length;
+
+            final totalTasks = tasks.length;
+            final completedTasks = tasks.where((t) => t.isCompleted).length;
+
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).primaryColor.withOpacity(0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).primaryColor.withOpacity(0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  )
+                ]
               ),
-              const SizedBox(height: 12),
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.stars, color: Colors.amber, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Tetap konsisten untuk menjaga streak tetap menyala.',
+                  const Text(
+                    'Progres Harian Anda',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 12,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  if (totalHabits > 0) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Kebiasaan Hari Ini',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        Text(
+                          '$completedHabits dari $totalHabits selesai',
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: totalHabits > 0 ? (completedHabits / totalHabits) : 0,
+                        backgroundColor: Colors.white24,
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                        minHeight: 6,
+                      ),
+                    ),
+                  ],
+                  if (totalHabits > 0 && totalTasks > 0) const SizedBox(height: 16),
+                  if (totalTasks > 0) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Tugas Hari Ini',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        Text(
+                          '$completedTasks dari $totalTasks selesai',
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: totalTasks > 0 ? (completedTasks / totalTasks) : 0,
+                        backgroundColor: Colors.white24,
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                        minHeight: 6,
+                      ),
+                    ),
+                  ],
                 ],
-              )
-            ],
-          ),
+              ),
+            );
+          },
+          orElse: () => const SizedBox.shrink(),
         );
       },
       orElse: () => const SizedBox.shrink(),
@@ -644,3 +764,245 @@ class _SortChip extends StatelessWidget {
     );
   }
 }
+
+/// Small empty state for habits inline in the scrollable home dashboard list.
+class _SmallEmptyHabitState extends StatelessWidget {
+  const _SmallEmptyHabitState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.outline.withOpacity(0.05),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.track_changes_rounded,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tidak Ada Kebiasaan',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Semua kebiasaan sudah dilacak atau belum ditambahkan hari ini.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Small empty state for tasks inline in the scrollable home dashboard list.
+class _SmallEmptyTaskState extends StatelessWidget {
+  const _SmallEmptyTaskState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 20.0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.outline.withOpacity(0.05),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppTheme.statusDone.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.checklist_rounded,
+                color: AppTheme.statusDone,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tidak Ada Tugas',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Semua tugas hari ini atau yang tertunda sudah selesai.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Bottom Sheet to choose between adding a new Habit or a new Task.
+void _showAddOptionsBottomSheet(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: const Color(0xff111318),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (context) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Tambah Baru',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Pilih apa yang ingin Anda tambahkan hari ini',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  fontSize: 13,
+                ),
+              ),
+              const Divider(height: 32, color: Colors.white10),
+              
+              // Option 1: Habit
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                tileColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.track_changes_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                title: const Text(
+                  'Tambah Kebiasaan',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                subtitle: const Text(
+                  'Bangun rutinitas harian atau mingguan yang positif',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/add-habit');
+                },
+              ),
+              const SizedBox(height: 12),
+              
+              // Option 2: Task
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                tileColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.1),
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.statusDone.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.checklist_rounded,
+                    color: AppTheme.statusDone,
+                  ),
+                ),
+                title: const Text(
+                  'Tambah Tugas',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                subtitle: const Text(
+                  'Catat target atau pekerjaan yang harus diselesaikan',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  showTaskFormBottomSheet(context, ref);
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
