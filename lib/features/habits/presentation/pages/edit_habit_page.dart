@@ -24,6 +24,8 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
   String _category = 'Kesehatan';
   String _type = 'daily'; // 'daily' atau 'weekly'
   TimeOfDay? _reminderTime;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
   late int _selectedColor;
 
   // Pilihan warna premium untuk habit
@@ -77,6 +79,22 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
         _reminderTime = TimeOfDay(hour: hour, minute: minute);
       }
     }
+    if (habit.startTime != null) {
+      final parts = habit.startTime!.split(':');
+      if (parts.length == 2) {
+        final hour = int.tryParse(parts[0]) ?? 0;
+        final minute = int.tryParse(parts[1]) ?? 0;
+        _startTime = TimeOfDay(hour: hour, minute: minute);
+      }
+    }
+    if (habit.endTime != null) {
+      final parts = habit.endTime!.split(':');
+      if (parts.length == 2) {
+        final hour = int.tryParse(parts[0]) ?? 0;
+        final minute = int.tryParse(parts[1]) ?? 0;
+        _endTime = TimeOfDay(hour: hour, minute: minute);
+      }
+    }
     _isInitialized = true;
   }
 
@@ -98,11 +116,77 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
     }
   }
 
+  Future<void> _selectExecutionTime(BuildContext context, bool isStart) async {
+    final initialTime = isStart 
+        ? (_startTime ?? const TimeOfDay(hour: 8, minute: 0))
+        : (_endTime ?? const TimeOfDay(hour: 9, minute: 0));
+        
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        if (isStart) {
+          _startTime = picked;
+        } else {
+          _endTime = picked;
+        }
+      });
+    }
+  }
+
+  String? get _calculatedDuration {
+    if (_startTime == null || _endTime == null) return null;
+    final startMinutes = _startTime!.hour * 60 + _startTime!.minute;
+    final endMinutes = _endTime!.hour * 60 + _endTime!.minute;
+    
+    int diff = endMinutes - startMinutes;
+    if (diff < 0) {
+      // Menangani rentang waktu yang melewati tengah malam (misal 23:00 - 01:00)
+      diff += 24 * 60;
+    }
+    
+    final hours = diff ~/ 60;
+    final mins = diff % 60;
+    
+    String res = '';
+    if (hours > 0) res += '$hours jam';
+    if (mins > 0) {
+      if (res.isNotEmpty) res += ' ';
+      res += '$mins menit';
+    }
+    return res.isEmpty ? '0 menit' : res;
+  }
+
   Future<void> _submitForm(Habit originalHabit) async {
     if (!_formKey.currentState!.validate()) return;
 
+    if ((_startTime != null && _endTime == null) || (_startTime == null && _endTime != null)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Jam Mulai dan Selesai harus diisi keduanya jika ingin menyetel target waktu pelaksanaan.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final String? reminderStr = _reminderTime != null
         ? '${_reminderTime!.hour.toString().padLeft(2, '0')}:${_reminderTime!.minute.toString().padLeft(2, '0')}'
+        : null;
+
+    final String? startTimeStr = _startTime != null
+        ? '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}'
+        : null;
+    final String? endTimeStr = _endTime != null
+        ? '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'
         : null;
 
     // Gandakan objek habit dengan nilai terbarui
@@ -115,6 +199,8 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
       color: _selectedColor,
       updatedAt: DateTime.now(),
       isSynced: false, // Menandai butuh sync ulang ke cloud
+      startTime: startTimeStr,
+      endTime: endTimeStr,
     );
 
     // Kirim aksi pembaruan ke controller
@@ -322,6 +408,116 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 24),
+
+                      // Target Waktu Pelaksanaan (Opsional)
+                      const Text(
+                        'Target Waktu Pelaksanaan (Opsional)',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          // Jam Mulai
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _selectExecutionTime(context, true),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).inputDecorationTheme.fillColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _startTime != null
+                                          ? '${_startTime!.hour.toString().padLeft(2, '0')}:${_startTime!.minute.toString().padLeft(2, '0')}'
+                                          : 'Jam Mulai',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: _startTime != null
+                                            ? Theme.of(context).colorScheme.onSurface
+                                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.play_circle_outline,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Jam Selesai
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _selectExecutionTime(context, false),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).inputDecorationTheme.fillColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _endTime != null
+                                          ? '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'
+                                          : 'Jam Selesai',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: _endTime != null
+                                            ? Theme.of(context).colorScheme.onSurface
+                                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.stop_circle_outlined,
+                                      color: Theme.of(context).colorScheme.primary,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_startTime != null && _endTime != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.timer_outlined,
+                              size: 14,
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Estimasi durasi: $_calculatedDuration',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 24),
 
                       // Color Picker Bullets Row

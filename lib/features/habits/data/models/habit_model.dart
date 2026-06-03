@@ -15,6 +15,8 @@ class HabitModel extends Habit {
     required super.color,
     super.isSynced,
     super.updatedAt,
+    super.startTime,
+    super.endTime,
   });
 
   /// Mengonversi dari Map SQLite ke Model
@@ -33,6 +35,8 @@ class HabitModel extends Habit {
       updatedAt: map['updated_at'] != null && (map['updated_at'] as String).isNotEmpty
           ? DateTime.parse(map['updated_at'] as String)
           : DateTime.now(),
+      startTime: map['start_time'] as String?,
+      endTime: map['end_time'] as String?,
     );
   }
 
@@ -50,6 +54,8 @@ class HabitModel extends Habit {
       color: habit.color,
       isSynced: habit.isSynced,
       updatedAt: habit.updatedAt,
+      startTime: habit.startTime,
+      endTime: habit.endTime,
     );
   }
 
@@ -67,6 +73,8 @@ class HabitModel extends Habit {
       'color': color,
       'is_synced': isSynced ? 1 : 0,
       'updated_at': updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+      'start_time': startTime,
+      'end_time': endTime,
     };
   }
 
@@ -84,6 +92,8 @@ class HabitModel extends Habit {
       color: color,
       isSynced: isSynced,
       updatedAt: updatedAt,
+      startTime: startTime,
+      endTime: endTime,
     );
   }
 }

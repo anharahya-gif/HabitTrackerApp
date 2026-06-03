@@ -14,6 +14,34 @@ class HabitDetailPage extends ConsumerWidget {
 
   const HabitDetailPage({super.key, required this.habitId});
 
+  String _getCalculatedDuration(String startTime, String endTime) {
+    final startParts = startTime.split(':');
+    final endParts = endTime.split(':');
+    if (startParts.length != 2 || endParts.length != 2) {
+      return '';
+    }
+    final startHour = int.tryParse(startParts[0]) ?? 0;
+    final startMinute = int.tryParse(startParts[1]) ?? 0;
+    final endHour = int.tryParse(endParts[0]) ?? 0;
+    final endMinute = int.tryParse(endParts[1]) ?? 0;
+
+    int diff = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
+    if (diff < 0) {
+      diff += 24 * 60; // Menangani rentang waktu melewati tengah malam
+    }
+
+    final hours = diff ~/ 60;
+    final mins = diff % 60;
+
+    String res = '';
+    if (hours > 0) res += '$hours jam';
+    if (mins > 0) {
+      if (res.isNotEmpty) res += ' ';
+      res += '$mins menit';
+    }
+    return res.isEmpty ? '0 menit' : res;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detailAsync = ref.watch(habitDetailProvider(habitId));
@@ -145,6 +173,40 @@ class HabitDetailPage extends ConsumerWidget {
                                       ),
                                     ),
                                   ),
+                                  if (habit.startTime != null && habit.endTime != null) ...[
+                                    const SizedBox(width: 8),
+                                    // Target Waktu Pelaksanaan Badge
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.timer_outlined,
+                                            size: 14,
+                                            color: Theme.of(context).colorScheme.primary,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '${habit.startTime} - ${habit.endTime} (${_getCalculatedDuration(habit.startTime!, habit.endTime!)})',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Theme.of(context).colorScheme.primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                   if (habit.reminderTime != null) ...[
                                     const SizedBox(width: 8),
                                     // Reminder Time Badge
@@ -162,7 +224,7 @@ class HabitDetailPage extends ConsumerWidget {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           const Icon(
-                                            Icons.access_time_rounded,
+                                            Icons.notifications_none_rounded,
                                             size: 14,
                                             color: AppTheme.statusSkipped,
                                           ),

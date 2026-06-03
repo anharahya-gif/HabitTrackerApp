@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 2, // Naikkan versi ke 2 untuk memicu migrasi
+      version: 3, // Naikkan versi ke 3 untuk mendukung target waktu pelaksanaan
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -47,7 +47,9 @@ class DatabaseHelper {
         reminder_time TEXT,
         color INTEGER NOT NULL,
         is_synced INTEGER NOT NULL DEFAULT 0,
-        updated_at TEXT NOT NULL
+        updated_at TEXT NOT NULL,
+        start_time TEXT,
+        end_time TEXT
       )
     ''');
 
@@ -89,6 +91,12 @@ class DatabaseHelper {
       // Tambah kolom is_synced dan updated_at ke tabel habit_logs
       await db.execute('ALTER TABLE habit_logs ADD COLUMN is_synced INTEGER NOT NULL DEFAULT 0');
       await db.execute('ALTER TABLE habit_logs ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""');
+    }
+
+    if (oldVersion < 3) {
+      // Tambah kolom start_time dan end_time ke tabel habits
+      await db.execute('ALTER TABLE habits ADD COLUMN start_time TEXT');
+      await db.execute('ALTER TABLE habits ADD COLUMN end_time TEXT');
     }
   }
 

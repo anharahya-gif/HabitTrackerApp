@@ -37,6 +37,8 @@ class TrackingRemoteDataSource {
         'reminder_time': habit.reminderTime,
         'color': habit.color,
         'updated_at': habit.updatedAt?.toIso8601String() ?? DateTime.now().toIso8601String(),
+        'start_time': habit.startTime,
+        'end_time': habit.endTime,
       };
 
       await docRef.set(data, SetOptions(merge: true));
@@ -70,6 +72,8 @@ class TrackingRemoteDataSource {
           updatedAt: data['updated_at'] != null && (data['updated_at'] as String).isNotEmpty
               ? DateTime.parse(data['updated_at'] as String)
               : DateTime.now(),
+          startTime: data['start_time'] as String?,
+          endTime: data['end_time'] as String?,
         );
       }).toList();
     } catch (e) {

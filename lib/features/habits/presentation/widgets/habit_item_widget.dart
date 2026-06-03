@@ -100,6 +100,31 @@ class HabitItemWidget extends ConsumerWidget {
                                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
+                                  if (habit.startTime != null && habit.endTime != null) ...[
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '•',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Icon(
+                                      Icons.play_circle_outline,
+                                      size: 11,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '${habit.startTime} - ${habit.endTime}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                   if (habit.reminderTime != null) ...[
                                     const SizedBox(width: 6),
                                     Text(
@@ -111,7 +136,7 @@ class HabitItemWidget extends ConsumerWidget {
                                     ),
                                     const SizedBox(width: 6),
                                     Icon(
-                                      Icons.access_time_rounded,
+                                      Icons.notifications_none_rounded,
                                       size: 11,
                                       color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
                                     ),

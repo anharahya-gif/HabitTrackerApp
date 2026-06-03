@@ -26,6 +26,8 @@ class HabitLocalDataSource {
       color: 0xFF5AA9FF,
       isSynced: true,
       updatedAt: DateTime.now(),
+      startTime: '06:00',
+      endTime: '06:30',
     ),
     HabitModel(
       id: 'mock-2',
@@ -37,6 +39,8 @@ class HabitLocalDataSource {
       color: 0xFF4ADE80,
       isSynced: true,
       updatedAt: DateTime.now(),
+      startTime: '20:00',
+      endTime: '20:45',
     ),
   ];
 

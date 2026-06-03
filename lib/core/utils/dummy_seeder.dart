@@ -34,6 +34,8 @@ class DummySeeder {
       color: 0xFF3B82F6, // Blue
       isSynced: false,
       updatedAt: now,
+      startTime: '07:00',
+      endTime: '07:20',
     );
 
     await habitLocalDS.insertHabit(dummyHabit);
