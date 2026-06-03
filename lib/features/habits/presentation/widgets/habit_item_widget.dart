@@ -11,8 +11,19 @@ import '../../domain/entities/habit.dart';
 /// Menampilkan metadata, streak saat ini, dan menyediakan aksi penandaan cepat harian.
 class HabitItemWidget extends ConsumerWidget {
   final Habit habit;
+  final bool isSelectionMode;
+  final bool isSelected;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
-  const HabitItemWidget({super.key, required this.habit});
+  const HabitItemWidget({
+    super.key,
+    required this.habit,
+    this.isSelectionMode = false,
+    this.isSelected = false,
+    this.onTap,
+    this.onLongPress,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,6 +32,7 @@ class HabitItemWidget extends ConsumerWidget {
     final trackingState = ref.watch(trackingProvider);
 
     final habitColor = Color(habit.color);
+    final theme = Theme.of(context);
 
     return streakAsync.when(
       skipLoadingOnRefresh: true,
@@ -44,10 +56,11 @@ class HabitItemWidget extends ConsumerWidget {
               child: Card(
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
-                  onTap: () {
+                  onTap: onTap ?? () {
                     // Navigasi ke halaman detail habit
                     context.push('/habit/${habit.id}');
                   },
+                  onLongPress: onLongPress,
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
@@ -162,8 +175,8 @@ class HabitItemWidget extends ConsumerWidget {
                           ),
                         ),
 
-                        // Streak Indicator (🔥 Flame)
-                        if (currentStreak > 0)
+                        // Streak Indicator (🔥 Flame, hidden in selection mode)
+                        if (currentStreak > 0 && !isSelectionMode)
                           Row(
                             children: [
                               const Icon(Icons.local_fire_department, color: Colors.orange, size: 20),
@@ -178,99 +191,116 @@ class HabitItemWidget extends ConsumerWidget {
                               ),
                             ],
                           ),
-                        const SizedBox(width: 16),
+                        if (!isSelectionMode) const SizedBox(width: 16),
 
-                        // Aksi Cepat: Tombol aksi ganda (Skip & Done)
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Tombol Lewati (Skip)
-                            GestureDetector(
-                              onTap: trackingState is TrackingLoading
-                                  ? null
-                                  : () async {
-                                      final newStatus = isSkipped ? 'missed' : 'skipped';
-                                      await ref.read(trackingProvider.notifier).trackHabit(
-                                        habitId: habit.id,
-                                        date: DateFormatter.todayString,
-                                        status: newStatus,
-                                      );
-                                    },
-                              onLongPress: trackingState is TrackingLoading
-                                  ? null
-                                  : () {
-                                      _showStatusOptions(context, ref);
-                                    },
-                              child: AnimatedContainer(
+                        // Aksi Cepat: Tombol aksi ganda (Skip & Done) or Selection Checkmark
+                        isSelectionMode
+                            ? AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                width: 38,
-                                height: 38,
+                                width: 28,
+                                height: 28,
                                 decoration: BoxDecoration(
-                                  color: isSkipped 
-                                      ? AppTheme.statusSkipped 
-                                      : Colors.transparent,
+                                  color: isSelected ? theme.colorScheme.primary : Colors.transparent,
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: isSkipped 
-                                        ? Colors.transparent 
-                                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.15),
+                                    color: isSelected ? Colors.transparent : theme.colorScheme.onSurface.withOpacity(0.3),
                                     width: 1.5,
                                   ),
                                 ),
-                                child: Icon(
-                                  Icons.next_plan,
-                                  color: isSkipped 
-                                      ? Colors.white 
-                                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            // Tombol Selesai (Done)
-                            GestureDetector(
-                              onTap: trackingState is TrackingLoading
-                                  ? null
-                                  : () async {
-                                      final newStatus = isDone ? 'missed' : 'done';
-                                      await ref.read(trackingProvider.notifier).trackHabit(
-                                        habitId: habit.id,
-                                        date: DateFormatter.todayString,
-                                        status: newStatus,
-                                      );
-                                    },
-                              onLongPress: trackingState is TrackingLoading
-                                  ? null
-                                  : () {
-                                      _showStatusOptions(context, ref);
-                                    },
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                width: 38,
-                                height: 38,
-                                decoration: BoxDecoration(
-                                  color: isDone 
-                                      ? AppTheme.statusDone 
-                                      : Colors.transparent,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isDone 
-                                        ? Colors.transparent 
-                                        : Theme.of(context).colorScheme.onSurface.withOpacity(0.15),
-                                    width: 1.5,
+                                child: isSelected
+                                    ? const Icon(Icons.check, color: Colors.white, size: 16)
+                                    : null,
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Tombol Lewati (Skip)
+                                  GestureDetector(
+                                    onTap: trackingState is TrackingLoading
+                                        ? null
+                                        : () async {
+                                            final newStatus = isSkipped ? 'missed' : 'skipped';
+                                            await ref.read(trackingProvider.notifier).trackHabit(
+                                              habitId: habit.id,
+                                              date: DateFormatter.todayString,
+                                              status: newStatus,
+                                            );
+                                          },
+                                    onLongPress: trackingState is TrackingLoading
+                                        ? null
+                                        : () {
+                                            _showStatusOptions(context, ref);
+                                          },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      width: 38,
+                                      height: 38,
+                                      decoration: BoxDecoration(
+                                        color: isSkipped 
+                                            ? AppTheme.statusSkipped 
+                                            : Colors.transparent,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: isSkipped 
+                                              ? Colors.transparent 
+                                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.15),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.next_plan,
+                                        color: isSkipped 
+                                            ? Colors.white 
+                                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                        size: 20,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                child: Icon(
-                                  Icons.check,
-                                  color: isDone 
-                                      ? Colors.white 
-                                      : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                                  size: 20,
-                                ),
+                                  const SizedBox(width: 8),
+                                  // Tombol Selesai (Done)
+                                  GestureDetector(
+                                    onTap: trackingState is TrackingLoading
+                                        ? null
+                                        : () async {
+                                            final newStatus = isDone ? 'missed' : 'done';
+                                            await ref.read(trackingProvider.notifier).trackHabit(
+                                              habitId: habit.id,
+                                              date: DateFormatter.todayString,
+                                              status: newStatus,
+                                            );
+                                          },
+                                    onLongPress: trackingState is TrackingLoading
+                                        ? null
+                                        : () {
+                                            _showStatusOptions(context, ref);
+                                          },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      width: 38,
+                                      height: 38,
+                                      decoration: BoxDecoration(
+                                        color: isDone 
+                                            ? AppTheme.statusDone 
+                                            : Colors.transparent,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: isDone 
+                                              ? Colors.transparent 
+                                              : Theme.of(context).colorScheme.onSurface.withOpacity(0.15),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.check,
+                                        color: isDone 
+                                            ? Colors.white 
+                                            : Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),

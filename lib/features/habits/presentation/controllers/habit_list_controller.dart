@@ -111,6 +111,38 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
     return result;
   }
 
+  /// Menghapus beberapa habit permanen berdasarkan daftar ID.
+  Future<Result<void>> deleteMultipleHabits(List<String> ids) async {
+    final deleteHabitUsecase = ref.read(deleteHabitProvider);
+    final authState = ref.read(authControllerProvider);
+
+    final user = authState.valueOrNull;
+    final isAuth = user != null && user.isAuthenticated;
+
+    Result<void> lastResult = const Success<void>(null);
+    bool anySuccess = false;
+
+    for (final id in ids) {
+      if (isAuth) {
+        ref.read(trackingRemoteDataSourceProvider).deleteRemoteHabit(user.id, id).catchError((_) {});
+      }
+      final result = await deleteHabitUsecase(id);
+      if (result is Success<void>) {
+        anySuccess = true;
+        // Batalkan notifikasi dari habit yang dihapus
+        await NotificationService.cancelHabitNotification(id);
+      } else {
+        lastResult = result;
+      }
+    }
+
+    if (anySuccess) {
+      state = await AsyncValue.guard(() => _fetchHabits());
+      _triggerBackgroundSync();
+    }
+    return lastResult;
+  }
+
   /// Sinkronisasi cloud otomatis di latar belakang
   void _triggerBackgroundSync() {
     final authState = ref.read(authControllerProvider);

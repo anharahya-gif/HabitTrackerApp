@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
+import '../../../../core/errors/failure.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/collapsible_sidebar.dart';
 import '../../domain/entities/task.dart';
@@ -9,11 +10,80 @@ import '../controllers/task_list_controller.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/domain/entities/app_user.dart';
 
-class TaskListPage extends ConsumerWidget {
+class TaskListPage extends ConsumerStatefulWidget {
   const TaskListPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TaskListPage> createState() => _TaskListPageState();
+}
+
+class _TaskListPageState extends ConsumerState<TaskListPage> {
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
+
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedIds.clear();
+    });
+  }
+
+  void _showBulkDeleteConfirmation(BuildContext context, List<Task> visibleTasks) {
+    final selectedCount = _selectedIds.length;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Tugas Terpilih'),
+        content: Text('Apakah Anda yakin ingin menghapus $selectedCount tugas yang dipilih secara permanen?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final idsToDelete = _selectedIds.toList();
+              _exitSelectionMode();
+              
+              final result = await ref.read(taskListProvider.notifier).deleteMultipleTasks(idsToDelete);
+              if (mounted) {
+                if (result is Failure) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menghapus beberapa tugas: ${result.message}')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Berhasil menghapus tugas terpilih')),
+                  );
+                }
+              }
+            },
+            child: Text(
+              'Hapus',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tasksAsync = ref.watch(filteredTasksProvider);
     final allTasksRaw = ref.watch(taskListProvider);
     final authState = ref.watch(authControllerProvider);
@@ -22,112 +92,237 @@ class TaskListPage extends ConsumerWidget {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return PopScope(
-      canPop: false,
+      canPop: !_isSelectionMode,
       onPopInvokedWithResult: (bool didPop, dynamic result) {
         if (didPop) return;
-        context.go('/home');
+        if (_isSelectionMode) {
+          _exitSelectionMode();
+        } else {
+          context.go('/home');
+        }
       },
       child: Scaffold(
-      drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () => ref.read(taskListProvider.notifier).refresh(),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // Premium Header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+        appBar: _isSelectionMode
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(70),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.08)
+                            : Colors.black.withOpacity(0.08),
+                        width: 1.0,
+                      ),
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             children: [
-                              if (isMobile) ...[
-                                Builder(
-                                  builder: (context) => Container(
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).brightness == Brightness.dark
-                                          ? Colors.white.withOpacity(0.05)
-                                          : Colors.black.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: Theme.of(context).brightness == Brightness.dark
-                                            ? Colors.white.withOpacity(0.08)
-                                            : Colors.black.withOpacity(0.08),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(Icons.menu_rounded, size: 24),
-                                      onPressed: () => Scaffold.of(context).openDrawer(),
-                                      constraints: const BoxConstraints(),
-                                      style: IconButton.styleFrom(
-                                        padding: const EdgeInsets.all(8),
-                                      ),
-                                    ),
-                                  ),
+                              IconButton(
+                                icon: const Icon(Icons.close_rounded),
+                                onPressed: _exitSelectionMode,
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.black.withOpacity(0.05),
                                 ),
-                                const SizedBox(width: 16),
-                              ],
+                              ),
+                              const SizedBox(width: 16),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    user.isGuest ? 'Halo, Pejuang Produktif!' : 'Halo, ${user.displayName}!',
+                                    'Mode Seleksi',
                                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                           fontWeight: FontWeight.w500,
+                                          color: Theme.of(context).colorScheme.primary,
                                         ),
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 2),
                                   Text(
-                                    'Tugas Harian',
-                                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                    '${_selectedIds.length} Terpilih',
+                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                           letterSpacing: -0.5,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
                                         ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                          // Profile
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).pushNamed('/profile'), // Handled or fallback
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: user.isAuthenticated 
-                                      ? AppTheme.statusDone 
-                                      : Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                                  width: 1.5,
+                          Row(
+                            children: [
+                              // Select/Deselect All
+                              IconButton(
+                                icon: Icon(
+                                  (tasksAsync.valueOrNull ?? []).isNotEmpty &&
+                                          (tasksAsync.valueOrNull ?? []).every((t) => _selectedIds.contains(t.id))
+                                      ? Icons.deselect_rounded
+                                      : Icons.select_all_rounded,
+                                ),
+                                tooltip: (tasksAsync.valueOrNull ?? []).isNotEmpty &&
+                                        (tasksAsync.valueOrNull ?? []).every((t) => _selectedIds.contains(t.id))
+                                    ? 'Batal Pilih Semua'
+                                    : 'Pilih Semua',
+                                onPressed: () {
+                                  final visibleTasks = tasksAsync.valueOrNull ?? [];
+                                  final allVisibleSelected = visibleTasks.isNotEmpty &&
+                                      visibleTasks.every((t) => _selectedIds.contains(t.id));
+                                  setState(() {
+                                    if (allVisibleSelected) {
+                                      for (final t in visibleTasks) {
+                                        _selectedIds.remove(t.id);
+                                      }
+                                      if (_selectedIds.isEmpty) {
+                                        _isSelectionMode = false;
+                                      }
+                                    } else {
+                                      for (final t in visibleTasks) {
+                                        _selectedIds.add(t.id);
+                                      }
+                                    }
+                                  });
+                                },
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.black.withOpacity(0.05),
                                 ),
                               ),
-                              child: CircleAvatar(
-                                radius: 20,
-                                backgroundColor: const Color(0xff1a1d24),
-                                backgroundImage: user.photoUrl != null 
-                                    ? NetworkImage(user.photoUrl!) 
-                                    : null,
-                                child: user.photoUrl == null
-                                    ? const Icon(Icons.person_outline, size: 20)
-                                    : null,
+                              const SizedBox(width: 8),
+                              // Delete sweep
+                              IconButton(
+                                icon: const Icon(Icons.delete_sweep_rounded, color: AppTheme.statusMissed),
+                                tooltip: 'Hapus Terpilih',
+                                onPressed: () {
+                                  final visibleTasks = tasksAsync.valueOrNull ?? [];
+                                  if (_selectedIds.isNotEmpty) {
+                                    _showBulkDeleteConfirmation(context, visibleTasks);
+                                  }
+                                },
+                                style: IconButton.styleFrom(
+                                  backgroundColor: AppTheme.statusMissed.withOpacity(0.1),
+                                ),
                               ),
-                            ),
-                          )
+                            ],
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                      // Stats Banner
-                      _TaskStatsBanner(allTasks: allTasksRaw.valueOrNull ?? []),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              )
+            : null,
+        drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
+        body: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: () => ref.read(taskListProvider.notifier).refresh(),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // Premium Header (only shown when NOT in selection mode)
+                if (!_isSelectionMode)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  if (isMobile) ...[
+                                    Builder(
+                                      builder: (context) => Container(
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).brightness == Brightness.dark
+                                              ? Colors.white.withOpacity(0.05)
+                                              : Colors.black.withOpacity(0.05),
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: Theme.of(context).brightness == Brightness.dark
+                                                ? Colors.white.withOpacity(0.08)
+                                                : Colors.black.withOpacity(0.08),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: IconButton(
+                                          icon: const Icon(Icons.menu_rounded, size: 24),
+                                          onPressed: () => Scaffold.of(context).openDrawer(),
+                                          constraints: const BoxConstraints(),
+                                          style: IconButton.styleFrom(
+                                            padding: const EdgeInsets.all(8),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                  ],
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        user.isGuest ? 'Halo, Pejuang Produktif!' : 'Halo, ${user.displayName}!',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Tugas Harian',
+                                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                              letterSpacing: -0.5,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              // Profile
+                              GestureDetector(
+                                onTap: () => Navigator.of(context).pushNamed('/profile'), // Handled or fallback
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: user.isAuthenticated 
+                                          ? AppTheme.statusDone 
+                                          : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: const Color(0xff1a1d24),
+                                    backgroundImage: user.photoUrl != null 
+                                        ? NetworkImage(user.photoUrl!) 
+                                        : null,
+                                    child: user.photoUrl == null
+                                        ? const Icon(Icons.person_outline, size: 20)
+                                        : null,
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          // Stats Banner
+                          _TaskStatsBanner(allTasks: allTasksRaw.valueOrNull ?? []),
+                        ],
+                      ),
+                    ),
+                  ),
 
               // Filter Tabs & Config Section
               SliverToBoxAdapter(
@@ -178,7 +373,26 @@ class TaskListPage extends ConsumerWidget {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final task = tasks[index];
-                          return TaskItemWidget(task: task);
+                          return TaskItemWidget(
+                            task: task,
+                            isSelectionMode: _isSelectionMode,
+                            isSelected: _selectedIds.contains(task.id),
+                            onTap: () {
+                              if (_isSelectionMode) {
+                                _toggleSelection(task.id);
+                              } else {
+                                showTaskFormBottomSheet(context, ref, task: task);
+                              }
+                            },
+                            onLongPress: () {
+                              if (!_isSelectionMode) {
+                                setState(() {
+                                  _isSelectionMode = true;
+                                  _selectedIds.add(task.id);
+                                });
+                              }
+                            },
+                          );
                         },
                         childCount: tasks.length,
                       ),
@@ -194,11 +408,13 @@ class TaskListPage extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showTaskFormBottomSheet(context, ref),
-        icon: const Icon(Icons.playlist_add_rounded),
-        label: const Text('Tugas Baru'),
-      ),
+      floatingActionButton: _isSelectionMode
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => showTaskFormBottomSheet(context, ref),
+              icon: const Icon(Icons.playlist_add_rounded),
+              label: const Text('Tugas Baru'),
+            ),
     ));
   }
 }
@@ -378,8 +594,18 @@ class _EmptyTasksState extends StatelessWidget {
 /// Single Task item rendering.
 class TaskItemWidget extends ConsumerWidget {
   final Task task;
+  final bool isSelectionMode;
+  final bool isSelected;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
-  const TaskItemWidget({required this.task});
+  const TaskItemWidget({
+    required this.task,
+    this.isSelectionMode = false,
+    this.isSelected = false,
+    this.onTap,
+    this.onLongPress,
+  });
 
   Color _getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
@@ -423,7 +649,8 @@ class TaskItemWidget extends ConsumerWidget {
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () => showTaskFormBottomSheet(context, ref, task: task),
+          onTap: onTap ?? () => showTaskFormBottomSheet(context, ref, task: task),
+          onLongPress: onLongPress,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -440,28 +667,32 @@ class TaskItemWidget extends ConsumerWidget {
                 ),
                 const SizedBox(width: 12),
 
-                // Interactive Animated Checklist Circle
+                // Interactive Animated Checklist Circle or Selection Checkmark
                 GestureDetector(
-                  onTap: () {
-                    ref.read(taskListProvider.notifier).toggleTaskCompletion(task.id);
-                  },
+                  onTap: isSelectionMode
+                      ? onTap
+                      : () {
+                          ref.read(taskListProvider.notifier).toggleTaskCompletion(task.id);
+                        },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     width: 28,
                     height: 28,
                     decoration: BoxDecoration(
-                      color: task.isCompleted ? AppTheme.statusDone : Colors.transparent,
+                      color: isSelectionMode
+                          ? (isSelected ? theme.colorScheme.primary : Colors.transparent)
+                          : (task.isCompleted ? AppTheme.statusDone : Colors.transparent),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: task.isCompleted
-                            ? Colors.transparent
-                            : theme.colorScheme.onSurface.withOpacity(0.15),
+                        color: isSelectionMode
+                            ? (isSelected ? Colors.transparent : theme.colorScheme.onSurface.withOpacity(0.3))
+                            : (task.isCompleted ? Colors.transparent : theme.colorScheme.onSurface.withOpacity(0.15)),
                         width: 1.5,
                       ),
                     ),
-                    child: task.isCompleted
-                        ? const Icon(Icons.check, color: Colors.white, size: 16)
-                        : null,
+                    child: isSelectionMode
+                        ? (isSelected ? const Icon(Icons.check, color: Colors.white, size: 16) : null)
+                        : (task.isCompleted ? const Icon(Icons.check, color: Colors.white, size: 16) : null),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -562,17 +793,18 @@ class TaskItemWidget extends ConsumerWidget {
                   ),
                 ),
 
-                // Delete Button
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                  onPressed: () {
-                    _showDeleteConfirmation(context, ref, task);
-                  },
-                  color: theme.colorScheme.error.withOpacity(0.8),
-                  style: IconButton.styleFrom(
-                    hoverColor: theme.colorScheme.error.withOpacity(0.08),
+                // Delete Button (hidden in selection mode)
+                if (!isSelectionMode)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                    onPressed: () {
+                      _showDeleteConfirmation(context, ref, task);
+                    },
+                    color: theme.colorScheme.error.withOpacity(0.8),
+                    style: IconButton.styleFrom(
+                      hoverColor: theme.colorScheme.error.withOpacity(0.08),
+                    ),
                   ),
-                ),
               ],
             ),
           ),

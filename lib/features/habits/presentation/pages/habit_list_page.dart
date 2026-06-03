@@ -2,13 +2,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/errors/failure.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/widgets/collapsible_sidebar.dart';
 import '../../../../shared/providers.dart';
+import '../../domain/entities/habit.dart';
 import '../../../auth/domain/entities/app_user.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/habit_list_controller.dart';
 import '../widgets/habit_item_widget.dart';
-import '../../../../shared/widgets/collapsible_sidebar.dart';
 
 
 /// Provider reaktif untuk memperbarui jam setiap 10 detik secara background
@@ -32,8 +34,77 @@ final currentTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
 
 /// Halaman utama (Home Screen) menampilkan daftar Habit aktif.
 /// Menyediakan pull-to-refresh, ringkasan statistik sederhana, dan tombol tambah habit baru.
-class HabitListPage extends ConsumerWidget {
+class HabitListPage extends ConsumerStatefulWidget {
   const HabitListPage({super.key});
+
+  @override
+  ConsumerState<HabitListPage> createState() => _HabitListPageState();
+}
+
+class _HabitListPageState extends ConsumerState<HabitListPage> {
+  bool _isSelectionMode = false;
+  final Set<String> _selectedIds = {};
+
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedIds.clear();
+    });
+  }
+
+  void _showBulkDeleteConfirmation(BuildContext context, List<Habit> visibleHabits) {
+    final selectedCount = _selectedIds.length;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Kebiasaan Terpilih'),
+        content: Text('Apakah Anda yakin ingin menghapus $selectedCount kebiasaan yang dipilih secara permanen?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final idsToDelete = _selectedIds.toList();
+              _exitSelectionMode();
+
+              final result = await ref.read(habitListProvider.notifier).deleteMultipleHabits(idsToDelete);
+              if (mounted) {
+                if (result is Failure) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menghapus beberapa kebiasaan: ${result.message}')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Berhasil menghapus kebiasaan terpilih')),
+                  );
+                }
+              }
+            },
+            child: Text(
+              'Hapus',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   String _formatCurrentDate(DateTime now) {
     final weekdays = [
@@ -68,7 +139,7 @@ class HabitListPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final habitsAsync = ref.watch(filteredHabitsProvider);
     final authState = ref.watch(authControllerProvider);
     final user = authState.valueOrNull ?? AppUser.guest;
@@ -79,157 +150,286 @@ class HabitListPage extends ConsumerWidget {
 
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return Scaffold(
-      drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () => ref.read(habitListProvider.notifier).refresh(),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // Premium Gradient App Header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+    return PopScope(
+      canPop: !_isSelectionMode,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        if (_isSelectionMode) {
+          _exitSelectionMode();
+        }
+      },
+      child: Scaffold(
+        appBar: _isSelectionMode
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(70),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withOpacity(0.08)
+                            : Colors.black.withOpacity(0.08),
+                        width: 1.0,
+                      ),
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             children: [
-                              if (isMobile) ...[
-                                Builder(
-                                  builder: (context) => Container(
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).brightness == Brightness.dark
-                                          ? Colors.white.withOpacity(0.05)
-                                          : Colors.black.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: Theme.of(context).brightness == Brightness.dark
-                                            ? Colors.white.withOpacity(0.08)
-                                            : Colors.black.withOpacity(0.08),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(Icons.menu_rounded, size: 24),
-                                      onPressed: () => Scaffold.of(context).openDrawer(),
-                                      constraints: const BoxConstraints(),
-                                      style: IconButton.styleFrom(
-                                        padding: const EdgeInsets.all(8),
-                                      ),
-                                    ),
-                                  ),
+                              IconButton(
+                                icon: const Icon(Icons.close_rounded),
+                                onPressed: _exitSelectionMode,
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.black.withOpacity(0.05),
                                 ),
-                                const SizedBox(width: 16),
-                              ],
+                              ),
+                              const SizedBox(width: 16),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    user.isGuest ? 'Halo, Pejuang Habit!' : 'Halo, ${user.displayName}!',
+                                    'Mode Seleksi',
                                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                           fontWeight: FontWeight.w500,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Kebiasaan',
-                                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                          letterSpacing: -0.5,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.calendar_today_rounded,
-                                          size: 12,
                                           color: Theme.of(context).colorScheme.primary,
                                         ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          _formatCurrentDate(currentDateTime),
-                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                color: Theme.of(context).colorScheme.primary,
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 11,
-                                              ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${_selectedIds.length} Terpilih',
+                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                          letterSpacing: -0.5,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
                                         ),
-                                      ],
-                                    ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                          // Premium Profile Icon / Settings reaktif ke Google OAuth
-                          GestureDetector(
-                            onTap: () => context.push('/profile'),
-                            child: authState.maybeWhen(
-                              data: (user) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: user.isAuthenticated 
-                                          ? AppTheme.statusDone 
-                                          : Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor: const Color(0xff1a1d24),
-                                    backgroundImage: user.photoUrl != null 
-                                        ? NetworkImage(user.photoUrl!) 
-                                        : null,
-                                    child: user.photoUrl == null
-                                        ? const Icon(Icons.person_outline, size: 20)
-                                        : null,
-                                  ),
-                                );
-                              },
-                              orElse: () => Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                                    width: 1,
-                                  ),
+                          Row(
+                            children: [
+                              // Select/Deselect All
+                              IconButton(
+                                icon: Icon(
+                                  (habitsAsync.valueOrNull ?? []).isNotEmpty &&
+                                          (habitsAsync.valueOrNull ?? []).every((h) => _selectedIds.contains(h.id))
+                                      ? Icons.deselect_rounded
+                                      : Icons.select_all_rounded,
                                 ),
-                                child: const CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: Colors.transparent,
-                                  child: Icon(Icons.person_outline, size: 20),
+                                tooltip: (habitsAsync.valueOrNull ?? []).isNotEmpty &&
+                                        (habitsAsync.valueOrNull ?? []).every((h) => _selectedIds.contains(h.id))
+                                    ? 'Batal Pilih Semua'
+                                    : 'Pilih Semua',
+                                onPressed: () {
+                                  final visibleHabits = habitsAsync.valueOrNull ?? [];
+                                  final allVisibleSelected = visibleHabits.isNotEmpty &&
+                                      visibleHabits.every((h) => _selectedIds.contains(h.id));
+                                  setState(() {
+                                    if (allVisibleSelected) {
+                                      for (final h in visibleHabits) {
+                                        _selectedIds.remove(h.id);
+                                      }
+                                      if (_selectedIds.isEmpty) {
+                                        _isSelectionMode = false;
+                                      }
+                                    } else {
+                                      for (final h in visibleHabits) {
+                                        _selectedIds.add(h.id);
+                                      }
+                                    }
+                                  });
+                                },
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.black.withOpacity(0.05),
                                 ),
                               ),
-                            ),
-                          )
+                              const SizedBox(width: 8),
+                              // Delete sweep
+                              IconButton(
+                                icon: const Icon(Icons.delete_sweep_rounded, color: AppTheme.statusMissed),
+                                tooltip: 'Hapus Terpilih',
+                                onPressed: () {
+                                  final visibleHabits = habitsAsync.valueOrNull ?? [];
+                                  if (_selectedIds.isNotEmpty) {
+                                    _showBulkDeleteConfirmation(context, visibleHabits);
+                                  }
+                                },
+                                style: IconButton.styleFrom(
+                                  backgroundColor: AppTheme.statusMissed.withOpacity(0.1),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                      
-                      // Ringkasan Statistik Singkat Visual Card
-                      const _StatsBannerCard(),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              )
+            : null,
+        drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
+        body: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: () => ref.read(habitListProvider.notifier).refresh(),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // Premium Gradient App Header (only shown when NOT in selection mode)
+                if (!_isSelectionMode)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  if (isMobile) ...[
+                                    Builder(
+                                      builder: (context) => Container(
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).brightness == Brightness.dark
+                                              ? Colors.white.withOpacity(0.05)
+                                              : Colors.black.withOpacity(0.05),
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(
+                                            color: Theme.of(context).brightness == Brightness.dark
+                                                ? Colors.white.withOpacity(0.08)
+                                                : Colors.black.withOpacity(0.08),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: IconButton(
+                                          icon: const Icon(Icons.menu_rounded, size: 24),
+                                          onPressed: () => Scaffold.of(context).openDrawer(),
+                                          constraints: const BoxConstraints(),
+                                          style: IconButton.styleFrom(
+                                            padding: const EdgeInsets.all(8),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                  ],
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        user.isGuest ? 'Halo, Pejuang Habit!' : 'Halo, ${user.displayName}!',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Kebiasaan',
+                                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                              letterSpacing: -0.5,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.calendar_today_rounded,
+                                              size: 12,
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              _formatCurrentDate(currentDateTime),
+                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                    color: Theme.of(context).colorScheme.primary,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 11,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              // Premium Profile Icon / Settings reaktif ke Google OAuth
+                              GestureDetector(
+                                onTap: () => context.push('/profile'),
+                                child: authState.maybeWhen(
+                                  data: (user) {
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: user.isAuthenticated 
+                                              ? AppTheme.statusDone 
+                                              : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 20,
+                                        backgroundColor: const Color(0xff1a1d24),
+                                        backgroundImage: user.photoUrl != null 
+                                            ? NetworkImage(user.photoUrl!) 
+                                            : null,
+                                        child: user.photoUrl == null
+                                            ? const Icon(Icons.person_outline, size: 20)
+                                            : null,
+                                      ),
+                                    );
+                                  },
+                                  orElse: () => Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: const CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: Colors.transparent,
+                                      child: Icon(Icons.person_outline, size: 20),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          
+                          // Ringkasan Statistik Singkat Visual Card
+                          const _StatsBannerCard(),
+                        ],
+                      ),
+                    ),
+                  ),
 
               // Title Section
               SliverToBoxAdapter(
@@ -319,7 +519,26 @@ class HabitListPage extends ConsumerWidget {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final habit = habits[index];
-                          return HabitItemWidget(habit: habit);
+                          return HabitItemWidget(
+                            habit: habit,
+                            isSelectionMode: _isSelectionMode,
+                            isSelected: _selectedIds.contains(habit.id),
+                            onTap: () {
+                              if (_isSelectionMode) {
+                                _toggleSelection(habit.id);
+                              } else {
+                                context.push('/habit/${habit.id}');
+                              }
+                            },
+                            onLongPress: () {
+                              if (!_isSelectionMode) {
+                                setState(() {
+                                  _isSelectionMode = true;
+                                  _selectedIds.add(habit.id);
+                                });
+                              }
+                            },
+                          );
                         },
                         childCount: habits.length,
                       ),
@@ -336,14 +555,16 @@ class HabitListPage extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          context.push('/add-habit');
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Kebiasaan Baru'),
-      ),
-    );
+      floatingActionButton: _isSelectionMode
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () {
+                context.push('/add-habit');
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Kebiasaan Baru'),
+            ),
+    ));
   }
 }
 

@@ -102,6 +102,36 @@ class TaskListController extends AsyncNotifier<List<Task>> {
     return result;
   }
 
+  /// Deletes multiple tasks by IDs and removes from cloud if connected.
+  Future<Result<void>> deleteMultipleTasks(List<String> ids) async {
+    final deleteTaskUsecase = ref.read(deleteTaskProvider);
+    final authState = ref.read(authControllerProvider);
+
+    final user = authState.valueOrNull;
+    final isAuth = user != null && user.isAuthenticated;
+
+    Result<void> lastResult = const Success<void>(null);
+    bool anySuccess = false;
+
+    for (final id in ids) {
+      if (isAuth) {
+        ref.read(trackingRemoteDataSourceProvider).deleteRemoteTask(user.id, id).catchError((_) {});
+      }
+      final result = await deleteTaskUsecase(id);
+      if (result is Success<void>) {
+        anySuccess = true;
+      } else {
+        lastResult = result;
+      }
+    }
+
+    if (anySuccess) {
+      state = await AsyncValue.guard(() => _fetchTasks());
+      _triggerBackgroundSync();
+    }
+    return lastResult;
+  }
+
   /// Triggers background cloud sync.
   void _triggerBackgroundSync() {
     final authState = ref.read(authControllerProvider);
