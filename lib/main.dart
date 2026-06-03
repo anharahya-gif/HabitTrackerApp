@@ -17,7 +17,10 @@ void main() async {
 
   // Inisialisasi Layanan Notifikasi Lokal
   await NotificationService.initialize();
-  await NotificationService.requestPermissions();
+  // Jalankan perizinan secara asinkron di latar belakang agar tidak menghalangi pemanggilan runApp()
+  NotificationService.requestPermissions().catchError((e) {
+    debugPrint('Gagal meminta izin notifikasi saat startup: $e');
+  });
   
   runApp(
     // Membungkus seluruh aplikasi dengan ProviderScope untuk state management Riverpod
@@ -27,11 +30,13 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     return MaterialApp.router(
       title: 'Dailio',
       debugShowCheckedModeBanner: false,
@@ -39,7 +44,7 @@ class MyApp extends StatelessWidget {
       // Integrasi Tema Premium Light & Dark Mode
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark, // Default menggunakan Dark Mode yang premium
+      themeMode: themeMode,
 
       // Integrasi Navigasi GoRouter Terpusat
       routerConfig: AppRouter.router,

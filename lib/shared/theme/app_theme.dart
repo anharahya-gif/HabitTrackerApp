@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Provider reaktif untuk mengatur mode tema aktif (Dark, Light, System)
+final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.dark);
 
 /// Konfigurasi Tema UI Premium (Dark & Light Mode) untuk Habit Tracker App.
 /// Menggunakan palet HSL tailored warna modern (Slate Grey, Emerald Green, Indigo, Crimson).

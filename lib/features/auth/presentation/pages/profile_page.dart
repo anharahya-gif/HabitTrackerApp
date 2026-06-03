@@ -17,6 +17,7 @@ import '../controllers/auth_controller.dart';
 import '../../../../shared/providers.dart';
 import '../../../../core/utils/dummy_seeder.dart';
 import '../../../../core/utils/notification_service.dart';
+import '../../../../shared/widgets/collapsible_sidebar.dart';
 
 /// Halaman Profil Pengguna Dailio berdesain premium.
 /// Mendukung login Google reaktif, keluar akun, info sinkronisasi SQLite lokal,
@@ -29,31 +30,45 @@ class ProfilePage extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: const Color(0xff111318), // Background Calm Productivity Dark
-      appBar: AppBar(
-        title: const Text('Profil Dailio'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          onPressed: () => context.pop(),
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        context.go('/home');
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xff111318), // Background Calm Productivity Dark
+        drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
+        appBar: AppBar(
+          title: const Text('Profil Dailio'),
+          leading: isMobile
+              ? Builder(
+                  builder: (context) => IconButton(
+                    icon: const Icon(Icons.menu_rounded),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                  ),
+                )
+              : null,
         ),
-      ),
-      body: authState.when(
-        loading: () => const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accentPrimary)),
-              SizedBox(height: 16),
-              Text('Memproses autentikasi...', style: TextStyle(color: Color(0xff94a3b8))),
-            ],
+        body: authState.when(
+          loading: () => const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accentPrimary)),
+                SizedBox(height: 16),
+                Text('Memproses autentikasi...', style: TextStyle(color: Color(0xff94a3b8))),
+              ],
+            ),
           ),
+          error: (error, _) => _buildErrorScreen(context, ref, error.toString()),
+          data: (user) {
+            final habits = ref.watch(habitListProvider).valueOrNull ?? [];
+            return _buildProfileContent(context, ref, user, habits);
+          },
         ),
-        error: (error, _) => _buildErrorScreen(context, ref, error.toString()),
-        data: (user) {
-          final habits = ref.watch(habitListProvider).valueOrNull ?? [];
-          return _buildProfileContent(context, ref, user, habits);
-        },
       ),
     );
   }

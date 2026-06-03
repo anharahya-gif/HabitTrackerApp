@@ -7,6 +7,7 @@ import '../../../auth/domain/entities/app_user.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/habit_list_controller.dart';
 import '../widgets/habit_item_widget.dart';
+import '../../../../shared/widgets/collapsible_sidebar.dart';
 
 /// Provider reaktif untuk memperbarui jam setiap 10 detik secara background
 final currentTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
@@ -74,7 +75,10 @@ class HabitListPage extends ConsumerWidget {
     final currentTimeAsync = ref.watch(currentTimeProvider);
     final currentDateTime = currentTimeAsync.valueOrNull ?? DateTime.now();
 
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
+      drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () => ref.read(habitListProvider.notifier).refresh(),
@@ -91,52 +95,67 @@ class HabitListPage extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Row(
                             children: [
-                              Text(
-                                user.isGuest ? 'Halo, Pejuang Habit!' : 'Halo, ${user.displayName}!',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Dailio',
-                                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                      letterSpacing: -0.5,
-                                    ),
-                              ),
-                              const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
-                                    width: 1,
+                              if (isMobile) ...[
+                                Builder(
+                                  builder: (context) => IconButton(
+                                    icon: const Icon(Icons.menu_rounded, size: 28),
+                                    onPressed: () => Scaffold.of(context).openDrawer(),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
                                   ),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today_rounded,
-                                      size: 12,
-                                      color: Theme.of(context).colorScheme.primary,
+                                const SizedBox(width: 16),
+                              ],
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user.isGuest ? 'Halo, Pejuang Habit!' : 'Halo, ${user.displayName}!',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Dailio',
+                                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                          letterSpacing: -0.5,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: Theme.of(context).colorScheme.primary.withOpacity(0.15),
+                                        width: 1,
+                                      ),
                                     ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      _formatCurrentDate(currentDateTime),
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            color: Theme.of(context).colorScheme.primary,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 11,
-                                          ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.calendar_today_rounded,
+                                          size: 12,
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          _formatCurrentDate(currentDateTime),
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: Theme.of(context).colorScheme.primary,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 11,
+                                              ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
