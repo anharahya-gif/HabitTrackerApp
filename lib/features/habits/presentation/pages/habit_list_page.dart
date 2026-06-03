@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../shared/providers.dart';
 import '../../../auth/domain/entities/app_user.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../controllers/habit_list_controller.dart';
@@ -11,6 +12,7 @@ import '../../../../shared/widgets/collapsible_sidebar.dart';
 import '../../../tasks/domain/entities/task.dart';
 import '../../../tasks/presentation/controllers/task_list_controller.dart';
 import '../../../tasks/presentation/pages/task_list_page.dart';
+
 
 /// Provider reaktif untuk memperbarui jam setiap 10 detik secara background
 final currentTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
