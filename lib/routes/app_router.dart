@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../features/dashboard/presentation/pages/dashboard_page.dart';
 import '../features/habits/presentation/pages/add_habit_page.dart';
 import '../features/habits/presentation/pages/edit_habit_page.dart';
 import '../features/habits/presentation/pages/habit_detail_page.dart';
@@ -39,6 +40,13 @@ class AppRouter {
           GoRoute(
             path: '/home',
             name: 'home',
+            builder: (BuildContext context, GoRouterState state) {
+              return const DashboardPage();
+            },
+          ),
+          GoRoute(
+            path: '/habits',
+            name: 'habits',
             builder: (BuildContext context, GoRouterState state) {
               return const HabitListPage();
             },

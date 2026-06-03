@@ -120,14 +120,27 @@ class CollapsibleSidebar extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12.0),
                 children: [
                   _SidebarMenuItem(
-                    icon: Icons.check_box_outlined,
-                    activeIcon: Icons.check_box_rounded,
-                    label: 'Kebiasaan',
+                    icon: Icons.dashboard_outlined,
+                    activeIcon: Icons.dashboard_rounded,
+                    label: 'Dashboard',
                     route: '/home',
                     isActive: location == '/home',
                     isCollapsed: isCollapsed && !isDrawer,
                     onTap: () {
                       context.go('/home');
+                      if (isDrawer) Navigator.of(context).pop();
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _SidebarMenuItem(
+                    icon: Icons.check_box_outlined,
+                    activeIcon: Icons.check_box_rounded,
+                    label: 'Kebiasaan',
+                    route: '/habits',
+                    isActive: location == '/habits',
+                    isCollapsed: isCollapsed && !isDrawer,
+                    onTap: () {
+                      context.go('/habits');
                       if (isDrawer) Navigator.of(context).pop();
                     },
                   ),
