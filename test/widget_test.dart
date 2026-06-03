@@ -18,6 +18,8 @@ void main() {
       color: 0xFF4CAF50,
       isSynced: false,
       updatedAt: now,
+      reminderType: 'alarm',
+      alarmSound: 'content://media/internal/audio/media/12',
     );
 
     test('should convert to and from SQL Map properly', () {
@@ -37,7 +39,8 @@ void main() {
       expect(decodedHabit.color, 0xFF4CAF50);
       expect(decodedHabit.isSynced, false);
       expect(decodedHabit.updatedAt, now);
-      expect(decodedHabit.reminderType, 'notification');
+      expect(decodedHabit.reminderType, 'alarm');
+      expect(decodedHabit.alarmSound, 'content://media/internal/audio/media/12');
     });
 
     test('should copyWith updated parameters correctly', () {
@@ -45,13 +48,15 @@ void main() {
       final updatedHabit = habit.copyWith(
         name: 'Minum Air 3L',
         isSynced: true,
-        reminderType: 'alarm',
+        reminderType: 'notification',
+        alarmSound: 'content://media/internal/audio/media/15',
       );
 
       // Assert
       expect(updatedHabit.name, 'Minum Air 3L');
       expect(updatedHabit.isSynced, true);
-      expect(updatedHabit.reminderType, 'alarm');
+      expect(updatedHabit.reminderType, 'notification');
+      expect(updatedHabit.alarmSound, 'content://media/internal/audio/media/15');
       expect(updatedHabit.id, habit.id); // remains unchanged
       expect(updatedHabit.description, habit.description); // remains unchanged
     });

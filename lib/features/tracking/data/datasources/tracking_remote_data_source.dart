@@ -41,6 +41,7 @@ class TrackingRemoteDataSource {
         'start_time': habit.startTime,
         'end_time': habit.endTime,
         'reminder_type': habit.reminderType,
+        'alarm_sound': habit.alarmSound,
       };
 
       await docRef.set(data, SetOptions(merge: true));
@@ -77,6 +78,7 @@ class TrackingRemoteDataSource {
           startTime: data['start_time'] as String?,
           endTime: data['end_time'] as String?,
           reminderType: data['reminder_type'] as String? ?? 'notification',
+          alarmSound: data['alarm_sound'] as String?,
         );
       }).toList();
     } catch (e) {

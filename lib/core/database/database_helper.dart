@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 5, // Naikkan versi ke 5 untuk mendukung fitur Tasks harian
+      version: 6, // Naikkan versi ke 6 untuk mendukung kustomisasi suara alarm habit
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -50,7 +50,8 @@ class DatabaseHelper {
         updated_at TEXT NOT NULL,
         start_time TEXT,
         end_time TEXT,
-        reminder_type TEXT NOT NULL DEFAULT 'notification'
+        reminder_type TEXT NOT NULL DEFAULT 'notification',
+        alarm_sound TEXT
       )
     ''');
 
@@ -158,6 +159,12 @@ class DatabaseHelper {
           is_synced INTEGER NOT NULL DEFAULT 0
         )
       ''');
+    }
+
+    if (oldVersion < 6) {
+      if (!await _columnExists(db, 'habits', 'alarm_sound')) {
+        await db.execute('ALTER TABLE habits ADD COLUMN alarm_sound TEXT');
+      }
     }
   }
 

@@ -6,6 +6,7 @@ import '../features/habits/presentation/pages/edit_habit_page.dart';
 import '../features/habits/presentation/pages/habit_detail_page.dart';
 import '../features/habits/presentation/pages/habit_list_page.dart';
 import '../features/habits/presentation/pages/splash_page.dart';
+import '../features/habits/presentation/pages/alarm_screen.dart';
 import '../features/auth/presentation/pages/profile_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/tasks/presentation/pages/task_list_page.dart';
@@ -95,6 +96,14 @@ class AppRouter {
         builder: (BuildContext context, GoRouterState state) {
           final habitId = state.pathParameters['id'] ?? '';
           return EditHabitPage(habitId: habitId);
+        },
+      ),
+      GoRoute(
+        path: '/alarm/:id',
+        name: 'alarm',
+        builder: (BuildContext context, GoRouterState state) {
+          final habitId = state.pathParameters['id'] ?? '';
+          return AlarmScreen(habitId: habitId);
         },
       ),
     ],

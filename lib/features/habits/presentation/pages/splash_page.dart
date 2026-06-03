@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/utils/notification_service.dart';
 import '../../../../shared/theme/app_theme.dart';
 
 /// Halaman Splash Screen yang ditampilkan pertama kali saat aplikasi dibuka.
@@ -20,6 +21,18 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
+
+    // Jika ada alarm tertunda dari launch payload, langsung arahkan ke Alarm Screen
+    if (NotificationService.pendingAlarmHabitId != null) {
+      final habitId = NotificationService.pendingAlarmHabitId!;
+      NotificationService.pendingAlarmHabitId = null; // reset
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.go('/alarm/$habitId');
+        }
+      });
+      return;
+    }
 
     // Inisialisasi animasi masuk (fade & scale)
     _animationController = AnimationController(

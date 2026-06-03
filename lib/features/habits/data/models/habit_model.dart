@@ -18,6 +18,7 @@ class HabitModel extends Habit {
     super.startTime,
     super.endTime,
     super.reminderType,
+    super.alarmSound,
   });
 
   /// Mengonversi dari Map SQLite ke Model
@@ -39,6 +40,7 @@ class HabitModel extends Habit {
       startTime: map['start_time'] as String?,
       endTime: map['end_time'] as String?,
       reminderType: map['reminder_type'] as String? ?? 'notification',
+      alarmSound: map['alarm_sound'] as String?,
     );
   }
 
@@ -59,6 +61,7 @@ class HabitModel extends Habit {
       startTime: habit.startTime,
       endTime: habit.endTime,
       reminderType: habit.reminderType,
+      alarmSound: habit.alarmSound,
     );
   }
 
@@ -79,6 +82,7 @@ class HabitModel extends Habit {
       'start_time': startTime,
       'end_time': endTime,
       'reminder_type': reminderType,
+      'alarm_sound': alarmSound,
     };
   }
 
@@ -99,6 +103,7 @@ class HabitModel extends Habit {
       startTime: startTime,
       endTime: endTime,
       reminderType: reminderType,
+      alarmSound: alarmSound,
     );
   }
 }

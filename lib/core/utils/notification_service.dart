@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +16,11 @@ class NotificationService {
 
   static final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
+
+  static final StreamController<String> alarmTriggerController =
+      StreamController<String>.broadcast();
+  
+  static String? pendingAlarmHabitId;
 
   /// Inisialisasi awal notifikasi lokal dan timezone
   static Future<void> initialize() async {
@@ -52,9 +58,27 @@ class NotificationService {
     await _notificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse details) {
-        // Aksi ketika notifikasi diklik (jika ingin membuka halaman tertentu di masa depan)
+        final payload = details.payload;
+        if (payload != null && payload.startsWith('alarm_')) {
+          final habitId = payload.substring(6);
+          alarmTriggerController.add(habitId);
+        }
       },
     );
+
+    // 6. Cek apakah aplikasi dibuka melalui notifikasi alarm (terminated state)
+    try {
+      final NotificationAppLaunchDetails? launchDetails =
+          await _notificationsPlugin.getNotificationAppLaunchDetails();
+      if (launchDetails != null && launchDetails.didNotificationLaunchApp) {
+        final payload = launchDetails.notificationResponse?.payload;
+        if (payload != null && payload.startsWith('alarm_')) {
+          pendingAlarmHabitId = payload.substring(6);
+        }
+      }
+    } catch (e) {
+      debugPrint('NotificationService: Gagal mendeteksi launch payload ($e)');
+    }
   }
 
   /// Meminta izin notifikasi ke pengguna (Android 13+ & iOS)
@@ -125,19 +149,23 @@ class NotificationService {
     // Konfigurasi Detail Saluran Android
     final AndroidNotificationDetails androidDetails;
     if (habit.reminderType == 'alarm') {
-      String? alarmUri;
-      try {
-        const platform = MethodChannel('com.anhar.dailio/alarm');
-        alarmUri = await platform.invokeMethod<String>('getAlarmUri');
-      } catch (e) {
-        debugPrint('Gagal mengambil alarm URI: $e');
+      String? soundUri = habit.alarmSound;
+      if (soundUri == null) {
+        try {
+          const platform = MethodChannel('com.anhar.dailio/alarm');
+          soundUri = await platform.invokeMethod<String>('getAlarmUri');
+        } catch (e) {
+          debugPrint('Gagal mengambil alarm URI default: $e');
+        }
       }
 
       final UriAndroidNotificationSound? uriSound =
-          alarmUri != null ? UriAndroidNotificationSound(alarmUri) : null;
+          soundUri != null ? UriAndroidNotificationSound(soundUri) : null;
+
+      final String channelId = 'habit_alarm_channel_${(soundUri ?? 'default').hashCode}';
 
       androidDetails = AndroidNotificationDetails(
-        'habit_alarms_v2', // Channel ID baru v2 agar sound terupdate
+        channelId, // Channel ID dinamis agar sound terupdate bypass cache OS
         'Alarm Pengingat Habit', // Channel Name
         channelDescription: 'Saluran alarm pengingat kebiasaan yang berdering terus-menerus',
         importance: Importance.max,
@@ -148,6 +176,7 @@ class NotificationService {
         additionalFlags: Int32List.fromList(<int>[4]), // FLAG_INSISTENT = 4
         audioAttributesUsage: AudioAttributesUsage.alarm,
         category: AndroidNotificationCategory.alarm,
+        fullScreenIntent: true, // Wajib agar muncul di lockscreen
       );
     } else {
       androidDetails = AndroidNotificationDetails(
@@ -189,6 +218,9 @@ class NotificationService {
         matchDateTimeComponents: isWeekly
             ? DateTimeComponents.dayOfWeekAndTime
             : DateTimeComponents.time,
+        payload: habit.reminderType == 'alarm'
+            ? 'alarm_${habit.id}'
+            : 'notification_${habit.id}',
       );
     } catch (e) {
       // Fallback ke inexact scheduling jika exact alarm tidak diizinkan di OS Android 14+
@@ -204,6 +236,9 @@ class NotificationService {
         matchDateTimeComponents: isWeekly
             ? DateTimeComponents.dayOfWeekAndTime
             : DateTimeComponents.time,
+        payload: habit.reminderType == 'alarm'
+            ? 'alarm_${habit.id}'
+            : 'notification_${habit.id}',
       );
     }
   }
@@ -251,5 +286,87 @@ class NotificationService {
       'Notifikasi instan berhasil dikirim. Sistem notifikasi Anda berfungsi!',
       notificationDetails,
     );
+  }
+
+  /// Menjadwalkan alarm tunda (snooze) selama durasi tertentu (dalam menit)
+  static Future<void> scheduleSnooze(Habit habit, int snoozeMinutes) async {
+    final int notificationId = habit.id.hashCode & 0x7FFFFFFF;
+    final int snoozeNotificationId = notificationId + 100000;
+
+    String? soundUri = habit.alarmSound;
+    if (soundUri == null) {
+      try {
+        const platform = MethodChannel('com.anhar.dailio/alarm');
+        soundUri = await platform.invokeMethod<String>('getAlarmUri');
+      } catch (e) {
+        debugPrint('Gagal mengambil alarm URI default untuk snooze: $e');
+      }
+    }
+
+    final UriAndroidNotificationSound? uriSound =
+        soundUri != null ? UriAndroidNotificationSound(soundUri) : null;
+
+    final String channelId = 'habit_alarm_channel_${(soundUri ?? 'default').hashCode}';
+
+    final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      channelId,
+      'Alarm Pengingat Habit (Tunda)',
+      channelDescription: 'Saluran alarm tunda pengingat kebiasaan yang berdering terus-menerus',
+      importance: Importance.max,
+      priority: Priority.high,
+      color: Color(habit.color),
+      playSound: true,
+      sound: uriSound,
+      additionalFlags: Int32List.fromList(<int>[4]), // FLAG_INSISTENT = 4
+      audioAttributesUsage: AudioAttributesUsage.alarm,
+      category: AndroidNotificationCategory.alarm,
+      fullScreenIntent: true,
+    );
+
+    final NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: const DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+      ),
+    );
+
+    final tz.TZDateTime scheduledDate =
+        tz.TZDateTime.now(tz.local).add(Duration(minutes: snoozeMinutes));
+
+    try {
+      await _notificationsPlugin.zonedSchedule(
+        snoozeNotificationId,
+        'Tunda: Ayo selesaikan habit-mu! 🌟',
+        'Waktunya untuk melakukan: ${habit.name}',
+        scheduledDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'alarm_${habit.id}',
+      );
+    } catch (e) {
+      await _notificationsPlugin.zonedSchedule(
+        snoozeNotificationId,
+        'Tunda: Ayo selesaikan habit-mu! 🌟',
+        'Waktunya untuk melakukan: ${habit.name}',
+        scheduledDate,
+        notificationDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'alarm_${habit.id}',
+      );
+    }
+  }
+
+  /// Menghentikan alarm (membatalkan notifikasi alarm utama dan notifikasi snooze)
+  static Future<void> stopAlarm(String habitId) async {
+    final int notificationId = habitId.hashCode & 0x7FFFFFFF;
+    final int snoozeNotificationId = notificationId + 100000;
+    await _notificationsPlugin.cancel(notificationId);
+    await _notificationsPlugin.cancel(snoozeNotificationId);
   }
 }

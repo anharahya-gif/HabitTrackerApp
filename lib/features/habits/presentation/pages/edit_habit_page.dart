@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/entities/habit.dart';
@@ -29,6 +30,10 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
   late int _selectedColor;
   String _reminderType = 'notification';
 
+  List<Map<String, String>> _availableSounds = [];
+  String? _selectedSoundUri;
+  bool _isPlayingPreview = false;
+
   // Pilihan warna premium untuk habit
   final List<int> _colors = [
     0xFF6366F1, // Indigo
@@ -55,13 +60,69 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
     _nameController = TextEditingController();
     _descController = TextEditingController();
     _selectedColor = _colors.first;
+    _loadAlarmSounds();
   }
 
   @override
   void dispose() {
+    _stopPreview();
     _nameController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAlarmSounds() async {
+    try {
+      const platform = MethodChannel('com.anhar.dailio/alarm');
+      final List<dynamic>? sounds = await platform.invokeMethod<List<dynamic>>('getAlarmSounds');
+      if (sounds != null) {
+        setState(() {
+          _availableSounds = sounds.map((s) => Map<String, String>.from(s as Map)).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Gagal memuat nada alarm: $e');
+    }
+  }
+
+  Future<void> _playPreview() async {
+    final uri = _selectedSoundUri;
+    const platform = MethodChannel('com.anhar.dailio/alarm');
+    if (uri == null) {
+      try {
+        final defaultUri = await platform.invokeMethod<String>('getAlarmUri');
+        if (defaultUri != null) {
+          await platform.invokeMethod('playAlarmSound', {'uri': defaultUri});
+          setState(() {
+            _isPlayingPreview = true;
+          });
+        }
+      } catch (e) {
+        debugPrint('Gagal memutar nada default: $e');
+      }
+    } else {
+      try {
+        await platform.invokeMethod('playAlarmSound', {'uri': uri});
+        setState(() {
+          _isPlayingPreview = true;
+        });
+      } catch (e) {
+        debugPrint('Gagal memutar nada terpilih: $e');
+      }
+    }
+  }
+
+  Future<void> _stopPreview() async {
+    if (!_isPlayingPreview) return;
+    try {
+      const platform = MethodChannel('com.anhar.dailio/alarm');
+      await platform.invokeMethod('stopAlarmSound');
+      setState(() {
+        _isPlayingPreview = false;
+      });
+    } catch (e) {
+      debugPrint('Gagal menghentikan nada: $e');
+    }
   }
 
   void _initFieldsOnce(Habit habit) {
@@ -78,6 +139,7 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
     _type = habit.type;
     _selectedColor = habit.color;
     _reminderType = habit.reminderType;
+    _selectedSoundUri = habit.alarmSound;
 
     if (habit.reminderTime != null) {
       final parts = habit.reminderTime!.split(':');
@@ -210,6 +272,7 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
       startTime: startTimeStr,
       endTime: endTimeStr,
       reminderType: _reminderType,
+      alarmSound: _selectedSoundUri,
     );
 
     // Kirim aksi pembaruan ke controller
@@ -448,6 +511,7 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
                               setState(() {
                                 _reminderType = newSelection.first;
                               });
+                              _stopPreview();
                             },
                             style: SegmentedButton.styleFrom(
                               selectedBackgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
@@ -461,6 +525,67 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
                             ),
                           ),
                         ),
+                        if (_reminderType == 'alarm') ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            'Nada Suara Alarm',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: _selectedSoundUri ?? 'default',
+                                  isExpanded: true,
+                                  items: [
+                                    const DropdownMenuItem<String>(
+                                      value: 'default',
+                                      child: Text('Nada Alarm Default'),
+                                    ),
+                                    ..._availableSounds.map((sound) {
+                                      return DropdownMenuItem<String>(
+                                        value: sound['uri'],
+                                        child: Text(
+                                          sound['title'] ?? 'Unknown Sound',
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                  onChanged: (val) {
+                                    setState(() {
+                                      _selectedSoundUri = val == 'default' ? null : val;
+                                    });
+                                    _stopPreview();
+                                  },
+                                  decoration: const InputDecoration(
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              IconButton.filledTonal(
+                                onPressed: () {
+                                  if (_isPlayingPreview) {
+                                    _stopPreview();
+                                  } else {
+                                    _playPreview();
+                                  }
+                                },
+                                icon: Icon(
+                                  _isPlayingPreview
+                                      ? Icons.stop_rounded
+                                      : Icons.play_arrow_rounded,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                       const SizedBox(height: 24),
 

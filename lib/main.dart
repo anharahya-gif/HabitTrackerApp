@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -30,11 +31,36 @@ void main() async {
   );
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  StreamSubscription<String>? _alarmSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // Mendengarkan pemicu alarm saat aplikasi aktif (foreground/background)
+    _alarmSubscription = NotificationService.alarmTriggerController.stream.listen((habitId) {
+      if (mounted) {
+        // Navigasi langsung ke layar alarm khusus
+        AppRouter.router.go('/alarm/$habitId');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _alarmSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
