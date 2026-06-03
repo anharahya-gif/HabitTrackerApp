@@ -575,10 +575,13 @@ class _CompactHabitRow extends ConsumerWidget {
                 color: theme.colorScheme.outline.withOpacity(0.06),
               ),
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
-              child: Row(
-                children: [
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => context.push('/habit/${habit.id}'),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+                child: Row(
+                  children: [
                   // Dot warna tema habit
                   Container(
                     width: 10,
@@ -694,8 +697,9 @@ class _CompactHabitRow extends ConsumerWidget {
               ),
             ),
           ),
-        );
-      },
+        ),
+      );
+    },
       orElse: () => const SizedBox.shrink(),
     );
   }
@@ -735,9 +739,12 @@ class _CompactTaskRow extends ConsumerWidget {
             color: theme.colorScheme.outline.withOpacity(0.06),
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
-          child: Row(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => showTaskFormBottomSheet(context, ref, task: task),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
+            child: Row(
             children: [
               // Prioritas Bar Pendek di Sisi Kiri
               Container(
@@ -794,8 +801,9 @@ class _CompactTaskRow extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 /// Widget Empty State Kecil khusus Dashboard
