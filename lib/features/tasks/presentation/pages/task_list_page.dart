@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../../../../shared/widgets/collapsible_sidebar.dart';
@@ -11,14 +12,6 @@ import '../../../auth/domain/entities/app_user.dart';
 class TaskListPage extends ConsumerWidget {
   const TaskListPage({super.key});
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksAsync = ref.watch(filteredTasksProvider);
@@ -28,7 +21,13 @@ class TaskListPage extends ConsumerWidget {
 
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        context.go('/home');
+      },
+      child: Scaffold(
       drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
       body: SafeArea(
         child: RefreshIndicator(
@@ -182,7 +181,7 @@ class TaskListPage extends ConsumerWidget {
         icon: const Icon(Icons.playlist_add_rounded),
         label: const Text('Tugas Baru'),
       ),
-    );
+    ));
   }
 }
 
