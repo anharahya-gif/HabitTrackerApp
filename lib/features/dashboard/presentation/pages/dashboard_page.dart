@@ -249,6 +249,8 @@ class DashboardPage extends ConsumerWidget {
               ),
 
               habitsAsync.when(
+                skipLoadingOnRefresh: true,
+                skipLoadingOnReload: true,
                 loading: () => const SliverToBoxAdapter(
                   child: Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())),
                 ),
@@ -315,6 +317,8 @@ class DashboardPage extends ConsumerWidget {
               ),
 
               tasksAsync.when(
+                skipLoadingOnRefresh: true,
+                skipLoadingOnReload: true,
                 loading: () => const SliverToBoxAdapter(
                   child: Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator())),
                 ),
@@ -538,6 +542,8 @@ class _CompactHabitRow extends ConsumerWidget {
     final habitColor = Color(habit.color);
 
     return logTodayAsync.maybeWhen(
+      skipLoadingOnRefresh: true,
+      skipLoadingOnReload: true,
       data: (logToday) {
         final isDone = logToday?.status == 'done';
         final isSkipped = logToday?.status == 'skipped';

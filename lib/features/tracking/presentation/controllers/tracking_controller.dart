@@ -60,8 +60,8 @@ class TrackingController extends AutoDisposeNotifier<TrackingState> {
         ref.read(habitDetailProvider(habitId).notifier).refresh();
 
         // 3. Segarkan provider family individu secara reaktif
-        ref.invalidate(habitStreakProvider(habitId));
-        ref.invalidate(habitTodayLogProvider(habitId));
+        ref.refresh(habitStreakProvider(habitId)); // ignore: unused_result
+        ref.refresh(habitTodayLogProvider(habitId)); // ignore: unused_result
 
         // 4. Sinkronisasi perubahan status harian ke cloud secara otomatis
         final authState = ref.read(authControllerProvider);

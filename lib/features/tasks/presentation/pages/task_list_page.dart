@@ -138,6 +138,8 @@ class TaskListPage extends ConsumerWidget {
 
               // Task List
               tasksAsync.when(
+                skipLoadingOnRefresh: true,
+                skipLoadingOnReload: true,
                 loading: () => const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator()),
                 ),

@@ -264,6 +264,8 @@ class HabitListPage extends ConsumerWidget {
 
               // Daftar Habit Utama
               habitsAsync.when(
+                skipLoadingOnRefresh: true,
+                skipLoadingOnReload: true,
                 loading: () => const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator()),
                 ),

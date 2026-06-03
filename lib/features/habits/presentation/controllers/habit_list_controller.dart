@@ -32,8 +32,6 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
 
   /// Memuat ulang daftar habit dari database SQLite dan sinkronisasi Cloud.
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
-
     // Jalankan Cloud Sync secara aktif saat user melakukan pull-to-refresh (jika terautentikasi)
     final authState = ref.read(authControllerProvider);
     final user = authState.valueOrNull;
@@ -62,7 +60,7 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
           debugPrint('Gagal menjadwalkan notifikasi habit baru: $e');
         }
       }
-      await refresh();
+      state = await AsyncValue.guard(() => _fetchHabits());
       _triggerBackgroundSync();
     }
     return result;
@@ -84,7 +82,7 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
       } catch (e) {
         debugPrint('Gagal memperbarui/membatalkan notifikasi habit: $e');
       }
-      await refresh();
+      state = await AsyncValue.guard(() => _fetchHabits());
       _triggerBackgroundSync();
     }
     return result;
@@ -107,7 +105,8 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
     if (result is Success<void>) {
       // Batalkan notifikasi dari habit yang dihapus
       await NotificationService.cancelHabitNotification(id);
-      await refresh();
+      state = await AsyncValue.guard(() => _fetchHabits());
+      _triggerBackgroundSync();
     }
     return result;
   }

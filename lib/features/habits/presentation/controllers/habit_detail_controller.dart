@@ -74,7 +74,6 @@ class HabitDetailController extends FamilyAsyncNotifier<HabitDetailState, String
 
   /// Memuat ulang data detail habit beserta log dan streak terbarunya.
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _fetchDetail(arg));
   }
 

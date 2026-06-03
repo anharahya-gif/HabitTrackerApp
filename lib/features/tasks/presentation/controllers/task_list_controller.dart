@@ -26,8 +26,6 @@ class TaskListController extends AsyncNotifier<List<Task>> {
 
   /// Refreshes the task list from local SQLite and triggers Cloud Sync.
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
-
     // Run Cloud Sync if the user is authenticated
     final authState = ref.read(authControllerProvider);
     final user = authState.valueOrNull;
@@ -48,7 +46,7 @@ class TaskListController extends AsyncNotifier<List<Task>> {
     final result = await createTaskUsecase(task);
 
     if (result is Success<void>) {
-      await refresh();
+      state = await AsyncValue.guard(() => _fetchTasks());
       _triggerBackgroundSync();
     }
     return result;
@@ -60,7 +58,7 @@ class TaskListController extends AsyncNotifier<List<Task>> {
     final result = await updateTaskUsecase(task);
 
     if (result is Success<void>) {
-      await refresh();
+      state = await AsyncValue.guard(() => _fetchTasks());
       _triggerBackgroundSync();
     }
     return result;
@@ -98,7 +96,8 @@ class TaskListController extends AsyncNotifier<List<Task>> {
     final result = await deleteTaskUsecase(id);
 
     if (result is Success<void>) {
-      await refresh();
+      state = await AsyncValue.guard(() => _fetchTasks());
+      _triggerBackgroundSync();
     }
     return result;
   }

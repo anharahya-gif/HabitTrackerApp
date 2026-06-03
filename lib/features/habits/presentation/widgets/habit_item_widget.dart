@@ -23,12 +23,16 @@ class HabitItemWidget extends ConsumerWidget {
     final habitColor = Color(habit.color);
 
     return streakAsync.when(
+      skipLoadingOnRefresh: true,
+      skipLoadingOnReload: true,
       loading: () => const _HabitItemPlaceholder(),
       error: (err, _) => ListTile(title: Text('Error: $err')),
       data: (streak) {
         final currentStreak = streak?.currentStreak ?? 0;
         
         return logTodayAsync.when(
+          skipLoadingOnRefresh: true,
+          skipLoadingOnReload: true,
           loading: () => const _HabitItemPlaceholder(),
           error: (err, _) => ListTile(title: Text('Error: $err')),
           data: (logToday) {
