@@ -83,26 +83,45 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_logs_habit_date ON habit_logs (habit_id, date)');
   }
 
+  Future<bool> _columnExists(Database db, String tableName, String columnName) async {
+    final columns = await db.rawQuery('PRAGMA table_info($tableName)');
+    return columns.any((column) => column['name'] == columnName);
+  }
+
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       // Tambah kolom is_synced dan updated_at ke tabel habits
-      await db.execute('ALTER TABLE habits ADD COLUMN is_synced INTEGER NOT NULL DEFAULT 0');
-      await db.execute('ALTER TABLE habits ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""');
+      if (!await _columnExists(db, 'habits', 'is_synced')) {
+        await db.execute('ALTER TABLE habits ADD COLUMN is_synced INTEGER NOT NULL DEFAULT 0');
+      }
+      if (!await _columnExists(db, 'habits', 'updated_at')) {
+        await db.execute('ALTER TABLE habits ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""');
+      }
 
       // Tambah kolom is_synced dan updated_at ke tabel habit_logs
-      await db.execute('ALTER TABLE habit_logs ADD COLUMN is_synced INTEGER NOT NULL DEFAULT 0');
-      await db.execute('ALTER TABLE habit_logs ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""');
+      if (!await _columnExists(db, 'habit_logs', 'is_synced')) {
+        await db.execute('ALTER TABLE habit_logs ADD COLUMN is_synced INTEGER NOT NULL DEFAULT 0');
+      }
+      if (!await _columnExists(db, 'habit_logs', 'updated_at')) {
+        await db.execute('ALTER TABLE habit_logs ADD COLUMN updated_at TEXT NOT NULL DEFAULT ""');
+      }
     }
 
     if (oldVersion < 3) {
       // Tambah kolom start_time dan end_time ke tabel habits
-      await db.execute('ALTER TABLE habits ADD COLUMN start_time TEXT');
-      await db.execute('ALTER TABLE habits ADD COLUMN end_time TEXT');
+      if (!await _columnExists(db, 'habits', 'start_time')) {
+        await db.execute('ALTER TABLE habits ADD COLUMN start_time TEXT');
+      }
+      if (!await _columnExists(db, 'habits', 'end_time')) {
+        await db.execute('ALTER TABLE habits ADD COLUMN end_time TEXT');
+      }
     }
 
     if (oldVersion < 4) {
       // Tambah kolom reminder_type ke tabel habits
-      await db.execute("ALTER TABLE habits ADD COLUMN reminder_type TEXT NOT NULL DEFAULT 'notification'");
+      if (!await _columnExists(db, 'habits', 'reminder_type')) {
+        await db.execute("ALTER TABLE habits ADD COLUMN reminder_type TEXT NOT NULL DEFAULT 'notification'");
+      }
     }
   }
 
