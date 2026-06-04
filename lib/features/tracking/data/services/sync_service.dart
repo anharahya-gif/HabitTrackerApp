@@ -108,6 +108,16 @@ class SyncService {
         }
       }
 
+      // Deteksi & Hapus Habits lokal yang sudah tersinkron sebelumnya tapi sudah dihapus di cloud
+      final remoteHabitIds = remoteHabits.map((h) => h.id).toSet();
+      final localHabits = await _localHabitDS.getAllHabitsIncludingArchived();
+      for (final localHabit in localHabits) {
+        if (localHabit.isSynced && !remoteHabitIds.contains(localHabit.id)) {
+          print('   🗑️ [SYNC] Menghapus habit lokal yang telah dihapus di cloud: "${localHabit.name}" (${localHabit.id})');
+          await _localHabitDS.deleteHabit(localHabit.id);
+        }
+      }
+
       // 2. Tarik & Sinkronisasikan Logs dari Cloud
       final remoteLogs = await _remoteDS.fetchRemoteHabitLogs(userId);
       print('📥 [SYNC] Ditemukan ${remoteLogs.length} log di Cloud Firestore.');
@@ -171,6 +181,16 @@ class SyncService {
           } else {
             print('   ⏭️ Tugas "${remoteTask.title}" sudah up-to-date di lokal.');
           }
+        }
+      }
+
+      // Deteksi & Hapus Tasks lokal yang sudah tersinkron sebelumnya tapi sudah dihapus di cloud
+      final remoteTaskIds = remoteTasks.map((t) => t.id).toSet();
+      final localTasks = await _localTaskDS.getAllTasks();
+      for (final localTask in localTasks) {
+        if (localTask.isSynced && !remoteTaskIds.contains(localTask.id)) {
+          print('   🗑️ [SYNC] Menghapus tugas lokal yang telah dihapus di cloud: "${localTask.title}" (${localTask.id})');
+          await _localTaskDS.deleteTask(localTask.id);
         }
       }
 

@@ -34,12 +34,11 @@ class HabitDetailPage extends ConsumerWidget {
     final mins = diff % 60;
 
     String res = '';
-    if (hours > 0) res += '$hours jam';
+    if (hours > 0) res += '${hours}j';
     if (mins > 0) {
-      if (res.isNotEmpty) res += ' ';
-      res += '$mins menit';
+      res += '${mins}m';
     }
-    return res.isEmpty ? '0 menit' : res;
+    return res.isEmpty ? '0m' : res;
   }
 
   @override
@@ -138,7 +137,9 @@ class HabitDetailPage extends ConsumerWidget {
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                               const SizedBox(height: 12),
-                              Row(
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: [
                                   // Category Badge
                                   Container(
@@ -156,7 +157,6 @@ class HabitDetailPage extends ConsumerWidget {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
                                   // Frequency Badge
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -174,7 +174,6 @@ class HabitDetailPage extends ConsumerWidget {
                                     ),
                                   ),
                                   if (habit.startTime != null && habit.endTime != null) ...[
-                                    const SizedBox(width: 8),
                                     // Target Waktu Pelaksanaan Badge
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -208,7 +207,6 @@ class HabitDetailPage extends ConsumerWidget {
                                     ),
                                   ],
                                   if (habit.reminderTime != null) ...[
-                                    const SizedBox(width: 8),
                                     // Reminder Time Badge
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

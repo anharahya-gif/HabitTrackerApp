@@ -114,6 +114,25 @@ class HabitLocalDataSource {
     }
   }
 
+  /// Mengambil seluruh habit termasuk yang diarsipkan.
+  Future<List<HabitModel>> getAllHabitsIncludingArchived() async {
+    if (kIsWeb) {
+      return List.from(_webHabits);
+    }
+
+    try {
+      final db = await _dbHelper.database;
+      final List<Map<String, dynamic>> maps = await db.query(
+        'habits',
+        orderBy: 'created_at DESC',
+      );
+
+      return maps.map((map) => HabitModel.fromSqlMap(map)).toList();
+    } catch (e) {
+      throw DatabaseException('Gagal mengambil seluruh daftar habit.', e);
+    }
+  }
+
   /// Mengambil satu habit berdasarkan ID-nya.
   Future<HabitModel?> getHabitById(String id) async {
     if (kIsWeb) {
