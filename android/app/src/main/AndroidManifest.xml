@@ -47,6 +47,56 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- =============================== -->
+        <!-- Dailio Home Screen Widgets      -->
+        <!-- =============================== -->
+
+        <!-- Widget Small (2×1): Streak + Progress -->
+        <receiver
+            android:name=".DailioWidgetSmall"
+            android:exported="true"
+            android:label="Dailio Kecil">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_small" />
+        </receiver>
+
+        <!-- Widget Medium (4×2): Streak + Progress + 3 Habits -->
+        <receiver
+            android:name=".DailioWidgetMedium"
+            android:exported="true"
+            android:label="Dailio Sedang">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_medium" />
+        </receiver>
+
+        <!-- Widget Large (4×4): Streak + Progress + Full Habit List -->
+        <receiver
+            android:name=".DailioWidgetLarge"
+            android:exported="true"
+            android:label="Dailio Besar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info_large" />
+        </receiver>
+
+        <!-- RemoteViewsService untuk ListView pada Large Widget -->
+        <service
+            android:name=".DailioWidgetListService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

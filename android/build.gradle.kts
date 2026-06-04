@@ -25,7 +25,7 @@ subprojects {
 }
 
 subprojects {
-    if (project.name == "file_picker") {
+    if (project.name == "file_picker" || project.name == "home_widget") {
         project.plugins.apply("org.jetbrains.kotlin.android")
     }
 }

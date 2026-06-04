@@ -6,6 +6,7 @@ import 'firebase_options.dart';
 import 'routes/app_router.dart';
 import 'shared/theme/app_theme.dart';
 import 'core/utils/notification_service.dart';
+import 'core/utils/home_widget_service.dart';
 
 void main() async {
   // Memastikan framework binding Flutter diinisialisasi sebelum proses sinkronisasi database dijalankan
@@ -21,6 +22,12 @@ void main() async {
   // Jalankan perizinan secara asinkron di latar belakang agar tidak menghalangi pemanggilan runApp()
   NotificationService.requestPermissions().catchError((e) {
     debugPrint('Gagal meminta izin notifikasi saat startup: $e');
+  });
+
+  // Inisialisasi Home Screen Widget Service
+  await HomeWidgetService.initialize();
+  HomeWidgetService.refreshWidget().catchError((e) {
+    debugPrint('Gagal refresh home widget saat startup: $e');
   });
   
   runApp(

@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#111318</color>
+
+    <!-- Dailio Home Screen Widget Colors -->
+    <color name="widget_bg">#111318</color>
+    <color name="widget_bg_card">#1A1D24</color>
+    <color name="widget_text_primary">#E8EAED</color>
+    <color name="widget_text_secondary">#9AA0A6</color>
+    <color name="widget_accent">#5AA9FF</color>
+    <color name="widget_done">#4ADE80</color>
+    <color name="widget_streak">#FFA726</color>
+    <color name="widget_pending">#4A4D55</color>
+    <color name="widget_progress_bg">#2A2D35</color>
 </resources>

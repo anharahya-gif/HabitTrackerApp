@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description_small">Tampilan ringkas: streak dan progres hari ini</string>
+    <string name="widget_description_medium">Streak, progres, dan 3 kebiasaan teratas</string>
+    <string name="widget_description_large">Streak, progres, dan daftar lengkap kebiasaan</string>
+</resources>

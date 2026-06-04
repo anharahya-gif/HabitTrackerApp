@@ -7,6 +7,10 @@ import '../../../../shared/providers.dart';
 import '../../domain/entities/habit.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../../core/utils/notification_service.dart';
+import '../../../../core/utils/home_widget_service.dart';
+import '../../../../core/utils/date_formatter.dart';
+import '../../domain/entities/habit_streak.dart';
+import '../../../tracking/domain/entities/habit_log.dart';
 
 /// Controller state management untuk daftar Habit menggunakan [AsyncNotifier].
 /// State berupa [AsyncValue<List<Habit>>] untuk menangani state loading, error, dan success secara elegan.
@@ -24,10 +28,50 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
       onSuccess: (habits) {
         // Segarkan semua notifikasi pengingat berdasarkan data SQLite terbaru
         NotificationService.scheduleAllNotifications(habits).catchError((_) {});
+        // Perbarui Home Screen Widget dengan data terkini
+        _updateHomeWidget(habits);
         return habits;
       },
       onFailure: (failure) => throw Exception(failure.message),
     );
+  }
+
+  /// Memperbarui data Home Screen Widget dengan daftar habit, streak, dan log hari ini.
+  Future<void> _updateHomeWidget(List<Habit> habits) async {
+    try {
+      final habitRepo = ref.read(habitRepositoryProvider);
+      final trackingRepo = ref.read(trackingRepositoryProvider);
+      final todayStr = DateFormatter.todayString;
+
+      // Ambil streak dan log hari ini untuk semua habit secara paralel
+      final streakFutures = habits.map((h) => habitRepo.getHabitStreak(h.id));
+      final logFutures = habits.map((h) => trackingRepo.getLogForHabitAndDate(h.id, todayStr));
+
+      final streakResults = await Future.wait(streakFutures);
+      final logResults = await Future.wait(logFutures);
+
+      final Map<String, HabitStreak?> streaks = {};
+      final Map<String, HabitLog?> todayLogs = {};
+
+      for (int i = 0; i < habits.length; i++) {
+        streaks[habits[i].id] = streakResults[i].fold(
+          onSuccess: (s) => s,
+          onFailure: (_) => null,
+        );
+        todayLogs[habits[i].id] = logResults[i].fold(
+          onSuccess: (l) => l,
+          onFailure: (_) => null,
+        );
+      }
+
+      await HomeWidgetService.updateWidgetData(
+        habits: habits,
+        streaks: streaks,
+        todayLogs: todayLogs,
+      );
+    } catch (e) {
+      debugPrint('Gagal memperbarui Home Widget: $e');
+    }
   }
 
   /// Memuat ulang daftar habit dari database SQLite dan sinkronisasi Cloud.
