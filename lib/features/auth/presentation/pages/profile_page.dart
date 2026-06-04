@@ -310,7 +310,7 @@ class ProfilePage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // 2.5. Cadangan Data Lokal (.xml) Ekspor & Impor
-          _buildBackupSection(context, ref, habits, tasks),
+          // _buildBackupSection(context, ref, habits, tasks),
 
           if (kDebugMode) ...[
             const SizedBox(height: 24),
@@ -688,357 +688,357 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  /// Membangun kartu cadangan lokal untuk melakukan ekspor & impor CSV
-  Widget _buildBackupSection(BuildContext context, WidgetRef ref, List<Habit> habits, List<Task> tasks) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardColor = isDark ? const Color(0xff1a1d24) : theme.colorScheme.surface;
-    final borderColor = isDark ? const Color(0xff2e3342) : const Color(0xffe2e8f0);
-    final textPrimary = isDark ? const Color(0xffe2e8f0) : theme.colorScheme.onSurface;
-    final textSecondary = isDark ? const Color(0xff94a3b8) : theme.colorScheme.onSurface.withOpacity(0.6);
+//   /// Membangun kartu cadangan lokal untuk melakukan ekspor & impor CSV
+//   Widget _buildBackupSection(BuildContext context, WidgetRef ref, List<Habit> habits, List<Task> tasks) {
+//     final theme = Theme.of(context);
+//     final isDark = theme.brightness == Brightness.dark;
+//     final cardColor = isDark ? const Color(0xff1a1d24) : theme.colorScheme.surface;
+//     final borderColor = isDark ? const Color(0xff2e3342) : const Color(0xffe2e8f0);
+//     final textPrimary = isDark ? const Color(0xffe2e8f0) : theme.colorScheme.onSurface;
+//     final textSecondary = isDark ? const Color(0xff94a3b8) : theme.colorScheme.onSurface.withOpacity(0.6);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: borderColor,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.table_chart_outlined, color: AppTheme.statusSkipped, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Cadangan Data Lokal',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                  color: textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Ekspor atau impor data Dailio Anda secara mandiri menggunakan file format .csv (Excel).',
-            style: TextStyle(
-              fontSize: 12,
-              color: textSecondary,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 20),
+//     return Container(
+//       width: double.infinity,
+//       padding: const EdgeInsets.all(20),
+//       decoration: BoxDecoration(
+//         color: cardColor,
+//         borderRadius: BorderRadius.circular(20),
+//         border: Border.all(
+//           color: borderColor,
+//         ),
+//       ),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Row(
+//             children: [
+//               const Icon(Icons.table_chart_outlined, color: AppTheme.statusSkipped, size: 20),
+//               const SizedBox(width: 8),
+//               Text(
+//                 'Cadangan Data Lokal',
+//                 style: TextStyle(
+//                   fontWeight: FontWeight.bold,
+//                   fontSize: 15,
+//                   color: textPrimary,
+//                 ),
+//               ),
+//             ],
+//           ),
+//           const SizedBox(height: 4),
+//           Text(
+//             'Ekspor atau impor data Dailio Anda secara mandiri menggunakan file format .csv (Excel).',
+//             style: TextStyle(
+//               fontSize: 12,
+//               color: textSecondary,
+//               height: 1.4,
+//             ),
+//           ),
+//           const SizedBox(height: 20),
           
-          // --- HABITS SECTION ---
-          Text(
-            'Data Kebiasaan (Habits)',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              // Tombol Ekspor Habits
-              Expanded(
-                child: SizedBox(
-                  height: 40,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _exportHabits(context, habits),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.accentPrimary,
-                      side: BorderSide(color: borderColor),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: const Icon(Icons.upload_outlined, size: 16),
-                    label: const Text(
-                      'Ekspor (.csv)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
+//           // --- HABITS SECTION ---
+//           Text(
+//             'Data Kebiasaan (Habits)',
+//             style: TextStyle(
+//               fontWeight: FontWeight.bold,
+//               fontSize: 13,
+//               color: textPrimary,
+//             ),
+//           ),
+//           const SizedBox(height: 8),
+//           Row(
+//             children: [
+//               // Tombol Ekspor Habits
+//               Expanded(
+//                 child: SizedBox(
+//                   height: 40,
+//                   child: OutlinedButton.icon(
+//                     onPressed: () => _exportHabits(context, habits),
+//                     style: OutlinedButton.styleFrom(
+//                       foregroundColor: AppTheme.accentPrimary,
+//                       side: BorderSide(color: borderColor),
+//                       shape: RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(12),
+//                       ),
+//                     ),
+//                     icon: const Icon(Icons.upload_outlined, size: 16),
+//                     label: const Text(
+//                       'Ekspor (.csv)',
+//                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//               const SizedBox(width: 12),
               
-              // Tombol Impor Habits
-              Expanded(
-                child: SizedBox(
-                  height: 40,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _importHabits(context, ref),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.accentPrimary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: const Icon(Icons.download_outlined, size: 16),
-                    label: const Text(
-                      'Impor (.csv)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+//               // Tombol Impor Habits
+//               Expanded(
+//                 child: SizedBox(
+//                   height: 40,
+//                   child: ElevatedButton.icon(
+//                     onPressed: () => _importHabits(context, ref),
+//                     style: ElevatedButton.styleFrom(
+//                       backgroundColor: AppTheme.accentPrimary,
+//                       foregroundColor: Colors.white,
+//                       shape: RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(12),
+//                       ),
+//                     ),
+//                     icon: const Icon(Icons.download_outlined, size: 16),
+//                     label: const Text(
+//                       'Impor (.csv)',
+//                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ],
+//           ),
           
-          const SizedBox(height: 20),
-          Divider(color: borderColor),
-          const SizedBox(height: 12),
+//           const SizedBox(height: 20),
+//           Divider(color: borderColor),
+//           const SizedBox(height: 12),
 
-          // --- TASKS SECTION ---
-          Text(
-            'Data Tugas (Tasks)',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              color: textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              // Tombol Ekspor Tasks
-              Expanded(
-                child: SizedBox(
-                  height: 40,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _exportTasks(context, tasks),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.statusSkipped,
-                      side: BorderSide(color: borderColor),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: const Icon(Icons.upload_outlined, size: 16),
-                    label: const Text(
-                      'Ekspor (.csv)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
+//           // --- TASKS SECTION ---
+//           Text(
+//             'Data Tugas (Tasks)',
+//             style: TextStyle(
+//               fontWeight: FontWeight.bold,
+//               fontSize: 13,
+//               color: textPrimary,
+//             ),
+//           ),
+//           const SizedBox(height: 8),
+//           Row(
+//             children: [
+//               // Tombol Ekspor Tasks
+//               Expanded(
+//                 child: SizedBox(
+//                   height: 40,
+//                   child: OutlinedButton.icon(
+//                     onPressed: () => _exportTasks(context, tasks),
+//                     style: OutlinedButton.styleFrom(
+//                       foregroundColor: AppTheme.statusSkipped,
+//                       side: BorderSide(color: borderColor),
+//                       shape: RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(12),
+//                       ),
+//                     ),
+//                     icon: const Icon(Icons.upload_outlined, size: 16),
+//                     label: const Text(
+//                       'Ekspor (.csv)',
+//                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//               const SizedBox(width: 12),
               
-              // Tombol Impor Tasks
-              Expanded(
-                child: SizedBox(
-                  height: 40,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _importTasks(context, ref),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.statusSkipped,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    icon: const Icon(Icons.download_outlined, size: 16),
-                    label: const Text(
-                      'Impor (.csv)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+//               // Tombol Impor Tasks
+//               Expanded(
+//                 child: SizedBox(
+//                   height: 40,
+//                   child: ElevatedButton.icon(
+//                     onPressed: () => _importTasks(context, ref),
+//                     style: ElevatedButton.styleFrom(
+//                       backgroundColor: AppTheme.statusSkipped,
+//                       foregroundColor: Colors.white,
+//                       shape: RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(12),
+//                       ),
+//                     ),
+//                     icon: const Icon(Icons.download_outlined, size: 16),
+//                     label: const Text(
+//                       'Impor (.csv)',
+//                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ],
+//       ),
+//     );
+//   }
 
-  /// Proses mengekspor habit lokal ke file CSV dan membagikannya via Share Sheet
-  Future<void> _exportHabits(BuildContext context, List<Habit> habits) async {
-    if (habits.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Anda belum memiliki kebiasaan aktif untuk diekspor.'),
-          backgroundColor: AppTheme.statusSkipped,
-        ),
-      );
-      return;
-    }
+//   /// Proses mengekspor habit lokal ke file CSV dan membagikannya via Share Sheet
+//   Future<void> _exportHabits(BuildContext context, List<Habit> habits) async {
+//     if (habits.isEmpty) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(
+//           content: Text('Anda belum memiliki kebiasaan aktif untuk diekspor.'),
+//           backgroundColor: AppTheme.statusSkipped,
+//         ),
+//       );
+//       return;
+//     }
 
-    try {
-      // 1. Generate konten CSV
-      final csvString = CsvHabitHelper.habitsToCsv(habits);
+//     try {
+//       // 1. Generate konten CSV
+//       final csvString = CsvHabitHelper.habitsToCsv(habits);
 
-      // 2. Simpan di direktori temporer HP
-      final directory = await getTemporaryDirectory();
-      final file = File('${directory.path}/dailio_habits_backup.csv');
-      await file.writeAsString(csvString);
+//       // 2. Simpan di direktori temporer HP
+//       final directory = await getTemporaryDirectory();
+//       final file = File('${directory.path}/dailio_habits_backup.csv');
+//       await file.writeAsString(csvString);
 
-      // 3. Share file CSV menggunakan Share Sheet native OS
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'Dailio Habits Backup (.csv)',
-        text: 'Berikut adalah file backup daftar kebiasaan Dailio saya! 🌱',
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengekspor data: $e'),
-          backgroundColor: AppTheme.statusMissed,
-        ),
-      );
-    }
-  }
+//       // 3. Share file CSV menggunakan Share Sheet native OS
+//       await Share.shareXFiles(
+//         [XFile(file.path)],
+//         subject: 'Dailio Habits Backup (.csv)',
+//         text: 'Berikut adalah file backup daftar kebiasaan Dailio saya! 🌱',
+//       );
+//     } catch (e) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Gagal mengekspor data: $e'),
+//           backgroundColor: AppTheme.statusMissed,
+//         ),
+//       );
+//     }
+//   }
 
-  /// Proses mengimpor file CSV dari storage lokal dan memasukkannya ke database SQLite
-  Future<void> _importHabits(BuildContext context, WidgetRef ref) async {
-    try {
-      // 1. Buka File Picker bawaan OS untuk menyaring berkas .csv
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['csv'],
-      );
+//   /// Proses mengimpor file CSV dari storage lokal dan memasukkannya ke database SQLite
+//   Future<void> _importHabits(BuildContext context, WidgetRef ref) async {
+//     try {
+//       // 1. Buka File Picker bawaan OS untuk menyaring berkas .csv
+//       final result = await FilePicker.pickFiles(
+//         type: FileType.custom,
+//         allowedExtensions: ['csv'],
+//       );
 
-      if (result == null || result.files.single.path == null) {
-        // Proses dibatalkan oleh user
-        return;
-      }
+//       if (result == null || result.files.single.path == null) {
+//         // Proses dibatalkan oleh user
+//         return;
+//       }
 
-      // 2. Baca isi file CSV
-      final file = File(result.files.single.path!);
-      final csvContent = await file.readAsString();
+//       // 2. Baca isi file CSV
+//       final file = File(result.files.single.path!);
+//       final csvContent = await file.readAsString();
 
-      // 3. Parsing CSV ke List<Habit>
-      final importedHabits = CsvHabitHelper.csvToHabits(csvContent);
+//       // 3. Parsing CSV ke List<Habit>
+//       final importedHabits = CsvHabitHelper.csvToHabits(csvContent);
 
-      if (importedHabits.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('File CSV kosong atau tidak sesuai dengan format ekspor Dailio.'),
-            backgroundColor: AppTheme.statusSkipped,
-          ),
-        );
-        return;
-      }
+//       if (importedHabits.isEmpty) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           const SnackBar(
+//             content: Text('File CSV kosong atau tidak sesuai dengan format ekspor Dailio.'),
+//             backgroundColor: AppTheme.statusSkipped,
+//           ),
+//         );
+//         return;
+//       }
 
-      // 4. Masukkan ke dalam SQLite menggunakan controller HabitList secara paralel/sekuensial
-      int successCount = 0;
-      for (final habit in importedHabits) {
-        final res = await ref.read(habitListProvider.notifier).addHabit(habit);
-        if (res is Success<void>) {
-          successCount++;
-        }
-      }
+//       // 4. Masukkan ke dalam SQLite menggunakan controller HabitList secara paralel/sekuensial
+//       int successCount = 0;
+//       for (final habit in importedHabits) {
+//         final res = await ref.read(habitListProvider.notifier).addHabit(habit);
+//         if (res is Success<void>) {
+//           successCount++;
+//         }
+//       }
 
-      // 5. Beri feedback visual SnackBar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Berhasil memulihkan $successCount dari ${importedHabits.length} kebiasaan! 🎉'),
-          backgroundColor: AppTheme.statusDone,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengimpor data. Pastikan format CSV sesuai.\nError: $e'),
-          backgroundColor: AppTheme.statusMissed,
-        ),
-      );
-    }
-  }
+//       // 5. Beri feedback visual SnackBar
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Berhasil memulihkan $successCount dari ${importedHabits.length} kebiasaan! 🎉'),
+//           backgroundColor: AppTheme.statusDone,
+//         ),
+//       );
+//     } catch (e) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Gagal mengimpor data. Pastikan format CSV sesuai.\nError: $e'),
+//           backgroundColor: AppTheme.statusMissed,
+//         ),
+//       );
+//     }
+//   }
 
-  /// Proses mengekspor tasks lokal ke file CSV dan membagikannya via Share Sheet
-  Future<void> _exportTasks(BuildContext context, List<Task> tasks) async {
-    if (tasks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Anda belum memiliki tugas untuk diekspor.'),
-          backgroundColor: AppTheme.statusSkipped,
-        ),
-      );
-      return;
-    }
+//   /// Proses mengekspor tasks lokal ke file CSV dan membagikannya via Share Sheet
+//   Future<void> _exportTasks(BuildContext context, List<Task> tasks) async {
+//     if (tasks.isEmpty) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(
+//           content: Text('Anda belum memiliki tugas untuk diekspor.'),
+//           backgroundColor: AppTheme.statusSkipped,
+//         ),
+//       );
+//       return;
+//     }
 
-    try {
-      final csvString = CsvTaskHelper.tasksToCsv(tasks);
+//     try {
+//       final csvString = CsvTaskHelper.tasksToCsv(tasks);
 
-      final directory = await getTemporaryDirectory();
-      final file = File('${directory.path}/dailio_tasks_backup.csv');
-      await file.writeAsString(csvString);
+//       final directory = await getTemporaryDirectory();
+//       final file = File('${directory.path}/dailio_tasks_backup.csv');
+//       await file.writeAsString(csvString);
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: 'Dailio Tasks Backup (.csv)',
-        text: 'Berikut adalah file backup daftar tugas Dailio saya! 📋',
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengekspor data: $e'),
-          backgroundColor: AppTheme.statusMissed,
-        ),
-      );
-    }
-  }
+//       await Share.shareXFiles(
+//         [XFile(file.path)],
+//         subject: 'Dailio Tasks Backup (.csv)',
+//         text: 'Berikut adalah file backup daftar tugas Dailio saya! 📋',
+//       );
+//     } catch (e) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Gagal mengekspor data: $e'),
+//           backgroundColor: AppTheme.statusMissed,
+//         ),
+//       );
+//     }
+//   }
 
-  /// Proses mengimpor file CSV tugas dari storage lokal dan memasukkannya ke database SQLite
-  Future<void> _importTasks(BuildContext context, WidgetRef ref) async {
-    try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['csv'],
-      );
+//   /// Proses mengimpor file CSV tugas dari storage lokal dan memasukkannya ke database SQLite
+//   Future<void> _importTasks(BuildContext context, WidgetRef ref) async {
+//     try {
+//       final result = await FilePicker.pickFiles(
+//         type: FileType.custom,
+//         allowedExtensions: ['csv'],
+//       );
 
-      if (result == null || result.files.single.path == null) {
-        return;
-      }
+//       if (result == null || result.files.single.path == null) {
+//         return;
+//       }
 
-      final file = File(result.files.single.path!);
-      final csvContent = await file.readAsString();
+//       final file = File(result.files.single.path!);
+//       final csvContent = await file.readAsString();
 
-      final importedTasks = CsvTaskHelper.csvToTasks(csvContent);
+//       final importedTasks = CsvTaskHelper.csvToTasks(csvContent);
 
-      if (importedTasks.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('File CSV kosong atau tidak sesuai dengan format ekspor tugas Dailio.'),
-            backgroundColor: AppTheme.statusSkipped,
-          ),
-        );
-        return;
-      }
+//       if (importedTasks.isEmpty) {
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           const SnackBar(
+//             content: Text('File CSV kosong atau tidak sesuai dengan format ekspor tugas Dailio.'),
+//             backgroundColor: AppTheme.statusSkipped,
+//           ),
+//         );
+//         return;
+//       }
 
-      int successCount = 0;
-      for (final task in importedTasks) {
-        final res = await ref.read(taskListProvider.notifier).addTask(task);
-        if (res is Success<void>) {
-          successCount++;
-        }
-      }
+//       int successCount = 0;
+//       for (final task in importedTasks) {
+//         final res = await ref.read(taskListProvider.notifier).addTask(task);
+//         if (res is Success<void>) {
+//           successCount++;
+//         }
+//       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Berhasil memulihkan $successCount dari ${importedTasks.length} tugas! 🎉'),
-          backgroundColor: AppTheme.statusDone,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengimpor data. Pastikan format CSV sesuai.\nError: $e'),
-          backgroundColor: AppTheme.statusMissed,
-        ),
-      );
-    }
-  }
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Berhasil memulihkan $successCount dari ${importedTasks.length} tugas! 🎉'),
+//           backgroundColor: AppTheme.statusDone,
+//         ),
+//       );
+//     } catch (e) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Gagal mengimpor data. Pastikan format CSV sesuai.\nError: $e'),
+//           backgroundColor: AppTheme.statusMissed,
+//         ),
+//       );
+//     }
+//   }
 }
 
 /// Widget Kustom Logo Google Presisi Tinggi demi Keunggulan Visual
