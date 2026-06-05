@@ -138,6 +138,19 @@ class CollapsibleSidebar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   _SidebarMenuItem(
+                    icon: Icons.calendar_month_outlined,
+                    activeIcon: Icons.calendar_month_rounded,
+                    label: 'Kalender',
+                    route: '/calendar',
+                    isActive: location == '/calendar',
+                    isCollapsed: isCollapsed && !isDrawer,
+                    onTap: () {
+                      context.go('/calendar');
+                      if (isDrawer) Navigator.of(context).pop();
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _SidebarMenuItem(
                     icon: Icons.person_outline_rounded,
                     activeIcon: Icons.person_rounded,
                     label: 'Profil Saya',

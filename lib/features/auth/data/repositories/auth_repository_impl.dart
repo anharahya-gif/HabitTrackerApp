@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/errors/failure.dart';
@@ -38,6 +39,12 @@ class AuthRepositoryImpl implements AuthRepository {
         photoUrl: firebaseUser.photoURL,
         isGuest: false,
       );
+      // Restore Google Sign-In session in background so token is ready
+      try {
+        await _googleSignIn.signInSilently();
+      } catch (e) {
+        debugPrint('Dailio Auth: Gagal signInSilently di _initSession: $e');
+      }
     }
     _authStreamController.add(_currentUser);
   }
@@ -131,5 +138,53 @@ class AuthRepositoryImpl implements AuthRepository {
     _currentUser = AppUser.guest;
     _authStreamController.add(_currentUser);
     return const Success(null);
+  }
+
+  @override
+  Future<String?> getGoogleAccessToken() async {
+    try {
+      var googleAccount = _googleSignIn.currentUser;
+      if (googleAccount == null) {
+        debugPrint('Dailio Auth: currentUser null di getGoogleAccessToken(). Mencoba signInSilently...');
+        googleAccount = await _googleSignIn.signInSilently();
+      }
+      if (googleAccount == null) {
+        debugPrint('Dailio Auth: currentUser tetap null setelah signInSilently()');
+        return null;
+      }
+      final googleAuth = await googleAccount.authentication;
+      final token = googleAuth.accessToken;
+      debugPrint('Dailio Auth: Berhasil mengambil Google Access Token. Panjang: ${token?.length}');
+      return token;
+    } catch (e) {
+      debugPrint('Dailio Auth: Error saat mengambil Google Access Token: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<bool> requestCalendarScope() async {
+    try {
+      // Pastikan sesi Google Sign-In aktif terlebih dahulu
+      var account = _googleSignIn.currentUser;
+      if (account == null) {
+        debugPrint('Dailio Auth: requestCalendarScope - currentUser null, mencoba signInSilently...');
+        account = await _googleSignIn.signInSilently();
+      }
+      if (account == null) {
+        debugPrint('Dailio Auth: requestCalendarScope - signInSilently gagal, tidak ada sesi Google aktif.');
+        return false;
+      }
+
+      debugPrint('Dailio Auth: requestCalendarScope - Meminta scope calendar.events...');
+      final result = await _googleSignIn.requestScopes([
+        'https://www.googleapis.com/auth/calendar.events',
+      ]);
+      debugPrint('Dailio Auth: requestCalendarScope - Hasil requestScopes: $result');
+      return result;
+    } catch (e) {
+      debugPrint('Dailio Auth: requestCalendarScope - Error: $e');
+      return false;
+    }
   }
 }

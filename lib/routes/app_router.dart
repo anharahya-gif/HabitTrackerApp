@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../features/dashboard/presentation/pages/dashboard_page.dart';
+import '../features/dashboard/presentation/pages/productivity_calendar_page.dart';
 import '../features/habits/presentation/pages/add_habit_page.dart';
 import '../features/habits/presentation/pages/edit_habit_page.dart';
 import '../features/habits/presentation/pages/habit_detail_page.dart';
@@ -64,6 +65,13 @@ class AppRouter {
             name: 'profile',
             builder: (BuildContext context, GoRouterState state) {
               return const ProfilePage();
+            },
+          ),
+          GoRoute(
+            path: '/calendar',
+            name: 'calendar',
+            builder: (BuildContext context, GoRouterState state) {
+              return const ProductivityCalendarPage();
             },
           ),
           GoRoute(

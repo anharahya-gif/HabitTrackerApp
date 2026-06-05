@@ -26,6 +26,13 @@ import '../features/tasks/domain/usecases/create_task.dart';
 import '../features/tasks/domain/usecases/get_tasks.dart';
 import '../features/tasks/domain/usecases/update_task.dart';
 import '../features/tasks/domain/usecases/delete_task.dart';
+import '../features/dashboard/data/services/google_calendar_service.dart';
+import '../features/auth/presentation/controllers/auth_controller.dart';
+
+final googleCalendarServiceProvider = Provider<GoogleCalendarService>((ref) {
+  final authRepository = ref.watch(authRepositoryProvider);
+  return GoogleCalendarService(authRepository: authRepository);
+});
 
 // ==========================================
 // 1. DATABASE & DATA SOURCES PROVIDERS

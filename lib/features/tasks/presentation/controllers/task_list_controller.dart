@@ -6,6 +6,7 @@ import '../../../../core/usecase/usecase.dart';
 import '../../../../shared/providers.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/task.dart';
+import '../../../dashboard/presentation/controllers/productivity_calendar_controller.dart';
 
 /// Controller state management for the Task list using [AsyncNotifier].
 class TaskListController extends AsyncNotifier<List<Task>> {
@@ -136,8 +137,17 @@ class TaskListController extends AsyncNotifier<List<Task>> {
   void _triggerBackgroundSync() {
     final authState = ref.read(authControllerProvider);
     authState.whenData((user) {
-      if (user.isAuthenticated) {
+      if (user.isAuthenticated && user.id != 'demo_user_google_123') {
         ref.read(syncServiceProvider).syncData(user.id).catchError((_) {});
+
+        // Google Calendar Sync
+        final calendarState = ref.read(productivityCalendarControllerProvider);
+        if (calendarState.googleCalendarSyncEnabled && calendarState.autoSyncTasks) {
+          final tasks = state.valueOrNull ?? [];
+          ref.read(googleCalendarServiceProvider).syncTasks(tasks).catchError((e) {
+            debugPrint('Google Calendar Task Sync Error: $e');
+          });
+        }
       }
     });
   }

@@ -17,4 +17,10 @@ abstract class AuthRepository {
 
   /// Aliran data reaktif yang memancarkan perubahan status login secara real-time.
   Stream<AppUser> get authStateChanges;
+
+  /// Mendapatkan Access Token Google OAuth untuk keperluan integrasi API pihak ketiga (misalnya Google Calendar).
+  Future<String?> getGoogleAccessToken();
+
+  /// Meminta izin scope Google Calendar secara bertahap (incremental authorization).
+  Future<bool> requestCalendarScope();
 }

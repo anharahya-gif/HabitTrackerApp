@@ -11,6 +11,7 @@ import '../../../../core/utils/home_widget_service.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../domain/entities/habit_streak.dart';
 import '../../../tracking/domain/entities/habit_log.dart';
+import '../../../dashboard/presentation/controllers/productivity_calendar_controller.dart';
 
 /// Controller state management untuk daftar Habit menggunakan [AsyncNotifier].
 /// State berupa [AsyncValue<List<Habit>>] untuk menangani state loading, error, dan success secara elegan.
@@ -191,8 +192,17 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
   void _triggerBackgroundSync() {
     final authState = ref.read(authControllerProvider);
     authState.whenData((user) {
-      if (user.isAuthenticated) {
+      if (user.isAuthenticated && user.id != 'demo_user_google_123') {
         ref.read(syncServiceProvider).syncData(user.id).catchError((_) {});
+
+        // Google Calendar Sync
+        final calendarState = ref.read(productivityCalendarControllerProvider);
+        if (calendarState.googleCalendarSyncEnabled && calendarState.autoSyncHabits) {
+          final habits = state.valueOrNull ?? [];
+          ref.read(googleCalendarServiceProvider).syncHabits(habits).catchError((e) {
+            debugPrint('Google Calendar Habit Sync Error: $e');
+          });
+        }
       }
     });
   }

@@ -53,6 +53,10 @@ dependencies:
   # Home Screen Widget
   home_widget: ^0.9.2
 
+  # Google API REST Calls and Settings persistence
+  http: ^1.2.0
+  shared_preferences: ^2.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
