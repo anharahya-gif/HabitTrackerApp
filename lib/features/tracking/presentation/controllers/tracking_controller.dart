@@ -5,6 +5,7 @@ import '../../../habits/presentation/controllers/habit_detail_controller.dart';
 import '../../../habits/presentation/controllers/habit_list_controller.dart';
 import '../../domain/usecases/track_habit_day.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../dashboard/presentation/controllers/gamification_controller.dart';
 
 /// State untuk proses tracking harian.
 sealed class TrackingState {
@@ -63,6 +64,13 @@ class TrackingController extends AutoDisposeNotifier<TrackingState> {
         ref.refresh(habitStreakProvider(habitId)); // ignore: unused_result
         ref.refresh(habitTodayLogProvider(habitId)); // ignore: unused_result
 
+        // 3.5. Gamifikasi: Berikan XP dan siram tanaman
+        if (status == 'done') {
+          ref.read(gamificationProvider.notifier).awardHabitCompletion();
+        } else {
+          ref.read(gamificationProvider.notifier).deductHabitCompletion();
+        }
+
         // 4. Sinkronisasi perubahan status harian ke cloud secara otomatis
         final authState = ref.read(authControllerProvider);
         authState.whenData((user) {
@@ -71,7 +79,7 @@ class TrackingController extends AutoDisposeNotifier<TrackingState> {
           }
         });
 
-        return Success(streak);
+        return const Success(null);
       },
       onFailure: (failure) {
         state = TrackingError(failure.message);

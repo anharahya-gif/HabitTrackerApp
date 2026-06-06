@@ -133,6 +133,27 @@ class TrackingLocalDataSource {
     }
   }
 
+  /// Mendapatkan seluruh histori log untuk semua habit, diurutkan berdasarkan tanggal terbaru.
+  Future<List<HabitLogModel>> getAllLogs() async {
+    if (kIsWeb) {
+      final list = List<HabitLogModel>.from(_webLogs);
+      list.sort((a, b) => b.date.compareTo(a.date));
+      return list;
+    }
+
+    try {
+      final db = await _dbHelper.database;
+      final List<Map<String, dynamic>> maps = await db.query(
+        'habit_logs',
+        orderBy: 'date DESC',
+      );
+
+      return maps.map((map) => HabitLogModel.fromSqlMap(map)).toList();
+    } catch (e) {
+      throw DatabaseException('Gagal mengambil seluruh log habit.', e);
+    }
+  }
+
   /// Mendapatkan log habit pada tanggal tertentu.
   Future<HabitLogModel?> getLogForHabitAndDate(String habitId, String date) async {
     if (kIsWeb) {

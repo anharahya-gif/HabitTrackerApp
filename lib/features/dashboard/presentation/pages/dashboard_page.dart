@@ -14,6 +14,9 @@ import '../../../tasks/presentation/controllers/task_list_controller.dart';
 import '../../../tasks/presentation/pages/task_list_page.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../tracking/presentation/controllers/tracking_controller.dart';
+import '../widgets/dailio_garden_widget.dart';
+import '../widgets/level_up_dialog.dart';
+import '../controllers/gamification_controller.dart';
 
 /// Provider reaktif untuk memperbarui jam setiap 10 detik secara background di Dashboard
 final dashboardTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
@@ -80,6 +83,25 @@ class DashboardPage extends ConsumerWidget {
     // Watch real-time clock
     final currentTimeAsync = ref.watch(dashboardTimeProvider);
     final currentDateTime = currentTimeAsync.valueOrNull ?? DateTime.now();
+
+    // Watch gamification state for level up dialog
+    final game = ref.watch(gamificationProvider);
+    if (game.showLevelUpDialog) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => LevelUpDialog(
+            oldLevel: game.previousLevel,
+            newLevel: game.level,
+            onConfirm: () {
+              ref.read(gamificationProvider.notifier).dismissLevelUpDialog();
+              Navigator.pop(context);
+            },
+          ),
+        );
+      });
+    }
 
     final isMobile = MediaQuery.of(context).size.width < 600;
 
@@ -230,6 +252,8 @@ class DashboardPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 24),
                       const _DashboardStatsBannerCard(),
+                      const SizedBox(height: 20),
+                      const DailioGardenWidget(),
                     ],
                   ),
                 ),

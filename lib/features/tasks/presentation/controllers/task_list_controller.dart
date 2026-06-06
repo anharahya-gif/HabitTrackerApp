@@ -7,6 +7,7 @@ import '../../../../shared/providers.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/task.dart';
 import '../../../dashboard/presentation/controllers/productivity_calendar_controller.dart';
+import '../../../dashboard/presentation/controllers/gamification_controller.dart';
 
 /// Controller state management for the Task list using [AsyncNotifier].
 class TaskListController extends AsyncNotifier<List<Task>> {
@@ -76,6 +77,14 @@ class TaskListController extends AsyncNotifier<List<Task>> {
         updatedAt: DateTime.now(),
         isSynced: false,
       );
+
+      // Trigger XP rewards based on completion status change
+      if (!task.isCompleted) {
+        ref.read(gamificationProvider.notifier).awardTaskCompletion();
+      } else {
+        ref.read(gamificationProvider.notifier).deductTaskCompletion();
+      }
+
       return await updateTask(updatedTask);
     } catch (e) {
       return Failure('Tugas tidak ditemukan: $e');

@@ -57,6 +57,9 @@ dependencies:
   http: ^1.2.0
   shared_preferences: ^2.2.0
 
+  # Pustaka grafik interaktif
+  fl_chart: ^0.68.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

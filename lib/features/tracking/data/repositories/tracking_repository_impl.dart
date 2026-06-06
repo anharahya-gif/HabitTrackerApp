@@ -38,6 +38,19 @@ class TrackingRepositoryImpl implements TrackingRepository {
   }
 
   @override
+  Future<Result<List<HabitLog>>> getAllLogs() async {
+    try {
+      final models = await _localDataSource.getAllLogs();
+      final entities = models.map((model) => model.toEntity()).toList();
+      return Success(entities);
+    } on DatabaseException catch (e) {
+      return Failure(e.message, e);
+    } catch (e) {
+      return Failure('Terjadi kesalahan saat mengambil semua histori tracking.', e);
+    }
+  }
+
+  @override
   Future<Result<HabitLog?>> getLogForHabitAndDate(String habitId, String date) async {
     try {
       final model = await _localDataSource.getLogForHabitAndDate(habitId, date);

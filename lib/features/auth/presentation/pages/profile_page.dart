@@ -21,6 +21,11 @@ import '../../../../shared/providers.dart';
 import '../../../../core/utils/dummy_seeder.dart';
 import '../../../../core/utils/notification_service.dart';
 import '../../../../shared/widgets/collapsible_sidebar.dart';
+import '../../../dashboard/presentation/controllers/analytics_controller.dart';
+import '../../../dashboard/presentation/widgets/perfect_week_badge_widget.dart';
+import '../../../dashboard/presentation/widgets/habit_adherence_chart.dart';
+import '../../../dashboard/presentation/widgets/task_velocity_chart.dart';
+import '../../../dashboard/presentation/controllers/gamification_controller.dart';
 
 /// Halaman Profil Pengguna Dailio berdesain premium.
 /// Mendukung login Google reaktif, keluar akun, info sinkronisasi SQLite lokal,
@@ -28,9 +33,51 @@ import '../../../../shared/widgets/collapsible_sidebar.dart';
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
+  // Dapatkan ikon emoji sesuai tahap pertumbuhan tanaman
+  String _getPlantEmoji(int stage) {
+    switch (stage) {
+      case -1:
+        return '🥀'; // Mati
+      case 0:
+        return '🫘'; // Benih
+      case 1:
+        return '🌱'; // Kecambah
+      case 2:
+        return '🪴'; // Sapling / Bibit di Pot
+      case 3:
+        return '🌳'; // Tanaman Dewasa
+      case 4:
+        return '🌻'; // Mekar Sempurna (Bunga Matahari)
+      default:
+        return '🫘';
+    }
+  }
+
+  // Dapatkan nama tahap pertumbuhan tanaman
+  String _getStageName(int stage) {
+    switch (stage) {
+      case -1:
+        return 'Mati Kering';
+      case 0:
+        return 'Benih';
+      case 1:
+        return 'Kecambah';
+      case 2:
+        return 'Bibit Muda';
+      case 3:
+        return 'Tanaman Rindang';
+      case 4:
+        return 'Mekar Sempurna';
+      default:
+        return 'Benih';
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
+    final analyticsAsync = ref.watch(analyticsControllerProvider);
+    final game = ref.watch(gamificationProvider);
 
     final isMobile = MediaQuery.of(context).size.width < 600;
 
@@ -91,7 +138,7 @@ class ProfilePage extends ConsumerWidget {
           data: (user) {
             final habits = ref.watch(habitListProvider).valueOrNull ?? [];
             final tasks = ref.watch(taskListProvider).valueOrNull ?? [];
-            return _buildProfileContent(context, ref, user, habits, tasks);
+            return _buildProfileContent(context, ref, user, habits, tasks, analyticsAsync, game);
           },
         ),
       ),
@@ -99,7 +146,14 @@ class ProfilePage extends ConsumerWidget {
   }
 
   /// Membangun antarmuka konten profil utama
-  Widget _buildProfileContent(BuildContext context, WidgetRef ref, AppUser user, List<Habit> habits, List<Task> tasks) {
+  Widget _buildProfileContent(
+      BuildContext context, 
+      WidgetRef ref, 
+      AppUser user, 
+      List<Habit> habits, 
+      List<Task> tasks,
+      AsyncValue<AnalyticsState> analyticsAsync,
+      GamificationState game) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = isDark ? const Color(0xff1a1d24) : theme.colorScheme.surface;
@@ -185,6 +239,229 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 32),
+
+          // 1.2. Level & XP Progress Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.amber.withOpacity(0.15),
+              ),
+              gradient: LinearGradient(
+                colors: [
+                  isDark ? const Color(0xff1e293b) : Colors.amber.shade50,
+                  cardColor,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.emoji_events_rounded,
+                            color: Colors.amber,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Level ${game.level}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textPrimary,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Gelar: Pejuang Konsistensi',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${game.xp} / ${game.level * 100} XP',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: game.xp / (game.level * 100),
+                    backgroundColor: (isDark ? Colors.white : Colors.black).withOpacity(0.08),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.amber),
+                    minHeight: 6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 1.3. Dailio Garden Status Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: (game.plantStage == -1
+                    ? AppTheme.statusMissed
+                    : (game.wiltDays > 0 ? AppTheme.statusSkipped : AppTheme.statusDone)).withOpacity(0.12),
+              ),
+              gradient: LinearGradient(
+                colors: [
+                  isDark ? const Color(0xff0f172a) : Colors.green.shade50,
+                  cardColor,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Row(
+              children: [
+                // Plant Emoji inside round container
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xff1e293b) : Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: (game.plantStage == -1
+                            ? AppTheme.statusMissed
+                            : (game.wiltDays > 0 ? AppTheme.statusSkipped : AppTheme.statusDone)).withOpacity(0.1),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      )
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      _getPlantEmoji(game.plantStage),
+                      style: const TextStyle(fontSize: 26),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                
+                // Plant Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Taman Dailio: ${game.plantType}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Status: ${game.plantStage == -1 ? "Mati" : (game.wiltDays > 0 ? "Layu" : "Subur")}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: game.plantStage == -1
+                              ? AppTheme.statusMissed
+                              : (game.wiltDays > 0 ? AppTheme.statusSkipped : AppTheme.statusDone),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Fase: ${_getStageName(game.plantStage)} (${(game.plantProgress * 100).toStringAsFixed(0)}%)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 1.5. Visualisasi Statistik & Analytics (Interactive Charts & Perfect Week Badge)
+          analyticsAsync.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 24.0),
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accentPrimary),
+                ),
+              ),
+            ),
+            error: (error, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Text(
+                  'Gagal memuat analitik: $error',
+                  style: const TextStyle(color: AppTheme.statusMissed, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            data: (analyticsState) {
+              return Column(
+                children: [
+                  // Perfect Week Badge
+                  PerfectWeekBadgeWidget(
+                    hasBadge: analyticsState.hasPerfectWeekBadge,
+                    totalCount: analyticsState.perfectWeeksCount,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Habit Adherence rate chart
+                  HabitAdherenceChart(data: analyticsState.adherenceData),
+                  const SizedBox(height: 24),
+
+                  // Task velocity chart
+                  TaskVelocityChart(
+                    categoryCounts: analyticsState.taskCategoryCounts,
+                    totalCompleted: analyticsState.totalTasksCompleted,
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              );
+            },
+          ),
 
           // 2. Banner Status Integrasi & Database
           Container(

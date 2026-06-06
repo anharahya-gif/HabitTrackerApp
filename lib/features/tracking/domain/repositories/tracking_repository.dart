@@ -9,6 +9,9 @@ abstract class TrackingRepository {
   /// Mengambil semua log tracking historis untuk suatu habit.
   Future<Result<List<HabitLog>>> getLogsForHabit(String habitId);
 
+  /// Mengambil semua log tracking historis untuk seluruh habit.
+  Future<Result<List<HabitLog>>> getAllLogs();
+
   /// Mengambil log tracking spesifik pada tanggal tertentu.
   Future<Result<HabitLog?>> getLogForHabitAndDate(String habitId, String date);
 
