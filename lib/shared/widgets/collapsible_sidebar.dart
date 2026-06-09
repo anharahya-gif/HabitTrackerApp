@@ -151,6 +151,32 @@ class CollapsibleSidebar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   _SidebarMenuItem(
+                    icon: Icons.auto_stories_outlined,
+                    activeIcon: Icons.auto_stories_rounded,
+                    label: 'Jurnal Harian',
+                    route: '/journal',
+                    isActive: location == '/journal',
+                    isCollapsed: isCollapsed && !isDrawer,
+                    onTap: () {
+                      context.go('/journal');
+                      if (isDrawer) Navigator.of(context).pop();
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _SidebarMenuItem(
+                    icon: Icons.timer_outlined,
+                    activeIcon: Icons.timer_rounded,
+                    label: 'Mode Fokus',
+                    route: '/focus',
+                    isActive: location == '/focus',
+                    isCollapsed: isCollapsed && !isDrawer,
+                    onTap: () {
+                      context.go('/focus');
+                      if (isDrawer) Navigator.of(context).pop();
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _SidebarMenuItem(
                     icon: Icons.person_outline_rounded,
                     activeIcon: Icons.person_rounded,
                     label: 'Profil Saya',

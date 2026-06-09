@@ -28,6 +28,9 @@ import '../features/tasks/domain/usecases/update_task.dart';
 import '../features/tasks/domain/usecases/delete_task.dart';
 import '../features/dashboard/data/services/google_calendar_service.dart';
 import '../features/auth/presentation/controllers/auth_controller.dart';
+import '../features/journal/data/datasources/journal_local_data_source.dart';
+import '../features/journal/data/repositories/journal_repository_impl.dart';
+import '../features/journal/domain/repositories/journal_repository.dart';
 
 final googleCalendarServiceProvider = Provider<GoogleCalendarService>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
@@ -55,6 +58,11 @@ final trackingLocalDataSourceProvider = Provider<TrackingLocalDataSource>((ref) 
 final taskLocalDataSourceProvider = Provider<TaskLocalDataSource>((ref) {
   final dbHelper = ref.watch(databaseHelperProvider);
   return TaskLocalDataSource(dbHelper);
+});
+
+final journalLocalDataSourceProvider = Provider<JournalLocalDataSource>((ref) {
+  final dbHelper = ref.watch(databaseHelperProvider);
+  return JournalLocalDataSource(dbHelper);
 });
 
 final trackingRemoteDataSourceProvider = Provider<TrackingRemoteDataSource>((ref) {
@@ -94,6 +102,11 @@ final trackingRepositoryProvider = Provider<TrackingRepository>((ref) {
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
   final localDataSource = ref.watch(taskLocalDataSourceProvider);
   return TaskRepositoryImpl(localDataSource);
+});
+
+final journalRepositoryProvider = Provider<JournalRepository>((ref) {
+  final localDataSource = ref.watch(journalLocalDataSourceProvider);
+  return JournalRepositoryImpl(localDataSource);
 });
 
 // ==========================================

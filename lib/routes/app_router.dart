@@ -11,6 +11,8 @@ import '../features/habits/presentation/pages/alarm_screen.dart';
 import '../features/auth/presentation/pages/profile_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/tasks/presentation/pages/task_list_page.dart';
+import '../features/journal/presentation/pages/journal_page.dart';
+import '../features/focus/presentation/pages/focus_timer_page.dart';
 import '../shared/widgets/main_layout_shell.dart';
 
 /// Konfigurasi navigasi global menggunakan go_router.
@@ -79,6 +81,20 @@ class AppRouter {
             name: 'settings',
             builder: (BuildContext context, GoRouterState state) {
               return const SettingsPage();
+            },
+          ),
+          GoRoute(
+            path: '/journal',
+            name: 'journal',
+            builder: (BuildContext context, GoRouterState state) {
+              return const JournalPage();
+            },
+          ),
+          GoRoute(
+            path: '/focus',
+            name: 'focus',
+            builder: (BuildContext context, GoRouterState state) {
+              return const FocusTimerPage();
             },
           ),
         ],

@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 6, // Naikkan versi ke 6 untuk mendukung kustomisasi suara alarm habit
+      version: 7, // Naikkan versi ke 7 untuk mendukung journal_entries & task tags
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -96,9 +96,25 @@ class DatabaseHelper {
         completed_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        is_synced INTEGER NOT NULL DEFAULT 0
+        is_synced INTEGER NOT NULL DEFAULT 0,
+        tags TEXT
       )
     ''');
+
+    // 5. Membuat tabel journal_entries untuk Catatan Harian & Mood Tracker
+    await db.execute('''
+      CREATE TABLE journal_entries (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL UNIQUE,
+        mood TEXT NOT NULL,
+        content TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    // Index untuk pencarian jurnal berdasarkan tanggal
+    await db.execute('CREATE INDEX idx_journal_date ON journal_entries (date)');
   }
 
   Future<bool> _columnExists(Database db, String tableName, String columnName) async {
@@ -166,6 +182,27 @@ class DatabaseHelper {
         await db.execute('ALTER TABLE habits ADD COLUMN alarm_sound TEXT');
       }
     }
+
+    if (oldVersion < 7) {
+      // Tambah kolom tags ke tabel tasks
+      if (!await _columnExists(db, 'tasks', 'tags')) {
+        await db.execute('ALTER TABLE tasks ADD COLUMN tags TEXT');
+      }
+
+      // Buat tabel journal_entries untuk Catatan Harian & Mood Tracker
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS journal_entries (
+          id TEXT PRIMARY KEY,
+          date TEXT NOT NULL UNIQUE,
+          mood TEXT NOT NULL,
+          content TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_journal_date ON journal_entries (date)');
+    }
   }
 
   /// Menutup koneksi database (opsional, berguna untuk testing)
@@ -176,3 +213,4 @@ class DatabaseHelper {
     }
   }
 }
+

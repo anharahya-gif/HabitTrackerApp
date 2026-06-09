@@ -183,7 +183,11 @@ final taskStatusFilterProvider = StateProvider<String>((ref) => 'Semua');
 final taskCategoryFilterProvider = StateProvider<String>((ref) => 'Semua');
 
 /// Provider for task sorting option.
-final taskSortOptionProvider = StateProvider<TaskSortOption>((ref) => TaskSortOption.newest);
+final taskSortOptionProvider = StateProvider<TaskSortOption>((ref) => TaskSortOption.priority);
+
+/// Provider for task tag filter.
+/// Values: null (no filter) or a specific tag name.
+final taskTagFilterProvider = StateProvider<String?>((ref) => null);
 
 /// Helper to assign weights to priorities for sorting.
 int _getPriorityWeight(String priority) {
@@ -204,6 +208,7 @@ final filteredTasksProvider = Provider<AsyncValue<List<Task>>>((ref) {
   final tasksAsync = ref.watch(taskListProvider);
   final statusFilter = ref.watch(taskStatusFilterProvider);
   final categoryFilter = ref.watch(taskCategoryFilterProvider);
+  final tagFilter = ref.watch(taskTagFilterProvider);
   final sortOption = ref.watch(taskSortOptionProvider);
 
   return tasksAsync.whenData((tasks) {
@@ -219,6 +224,11 @@ final filteredTasksProvider = Provider<AsyncValue<List<Task>>>((ref) {
     // 2. Category Filter
     if (categoryFilter != 'Semua') {
       resultList = resultList.where((t) => t.category == categoryFilter).toList();
+    }
+
+    // 3. Tag Filter
+    if (tagFilter != null && tagFilter.isNotEmpty) {
+      resultList = resultList.where((t) => t.tags.contains(tagFilter)).toList();
     }
 
     // 3. Sorting

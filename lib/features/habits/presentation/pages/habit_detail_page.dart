@@ -6,6 +6,7 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../shared/theme/app_theme.dart';
 import '../controllers/habit_detail_controller.dart';
 import '../controllers/habit_list_controller.dart';
+import '../../../focus/presentation/controllers/focus_timer_controller.dart';
 
 /// Halaman detail habit harian, menampilkan statistik streak lengkap,
 /// diagram kalender 30 hari visual, serta opsi manajemen (arsip, hapus).
@@ -39,6 +40,25 @@ class HabitDetailPage extends ConsumerWidget {
       res += '${mins}m';
     }
     return res.isEmpty ? '0m' : res;
+  }
+
+  int _getCalculatedDurationMinutes(String? startTime, String? endTime) {
+    if (startTime == null || endTime == null) return 25;
+    final startParts = startTime.split(':');
+    final endParts = endTime.split(':');
+    if (startParts.length != 2 || endParts.length != 2) {
+      return 25;
+    }
+    final startHour = int.tryParse(startParts[0]) ?? 0;
+    final startMinute = int.tryParse(startParts[1]) ?? 0;
+    final endHour = int.tryParse(endParts[0]) ?? 0;
+    final endMinute = int.tryParse(endParts[1]) ?? 0;
+
+    int diff = (endHour * 60 + endMinute) - (startHour * 60 + startMinute);
+    if (diff < 0) {
+      diff += 24 * 60; // Menangani rentang waktu melewati tengah malam
+    }
+    return diff == 0 ? 25 : diff;
   }
 
   @override
@@ -259,6 +279,31 @@ class HabitDetailPage extends ConsumerWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          final durationMinutes = _getCalculatedDurationMinutes(habit.startTime, habit.endTime);
+                          ref.read(focusTimerProvider.notifier).startTimer(
+                            durationMinutes: durationMinutes,
+                            habitId: habit.id,
+                            habitName: habit.name,
+                          );
+                          context.push('/focus');
+                        },
+                        icon: const Icon(Icons.timer_outlined, color: Colors.white),
+                        label: const Text('Mulai Fokus (Pomodoro)', style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 24),
 

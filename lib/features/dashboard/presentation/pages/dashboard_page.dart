@@ -17,6 +17,7 @@ import '../../../tracking/presentation/controllers/tracking_controller.dart';
 import '../widgets/dailio_garden_widget.dart';
 import '../widgets/level_up_dialog.dart';
 import '../controllers/gamification_controller.dart';
+import '../../../journal/presentation/controllers/journal_controller.dart';
 
 /// Provider reaktif untuk memperbarui jam setiap 10 detik secara background di Dashboard
 final dashboardTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
@@ -254,6 +255,8 @@ class DashboardPage extends ConsumerWidget {
                       const _DashboardStatsBannerCard(),
                       const SizedBox(height: 20),
                       const DailioGardenWidget(),
+                      const SizedBox(height: 16),
+                      const _DashboardMoodBanner(),
                     ],
                   ),
                 ),
@@ -1013,4 +1016,101 @@ void _showDashboardAddOptions(BuildContext context, WidgetRef ref) {
       );
     },
   );
+}
+
+class _DashboardMoodBanner extends ConsumerWidget {
+  const _DashboardMoodBanner();
+
+  Color _getMoodColor(String mood) {
+    switch (mood) {
+      case 'great':
+        return const Color(0xff4ade80);
+      case 'good':
+        return const Color(0xff60a5fa);
+      case 'neutral':
+        return const Color(0xfffbbf24);
+      case 'bad':
+        return const Color(0xfffb7185);
+      case 'terrible':
+        return const Color(0xfff43f5e);
+      default:
+        return const Color(0xfffbbf24);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final todayJournal = ref.watch(todayJournalProvider);
+    if (todayJournal == null) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final moodColor = _getMoodColor(todayJournal.mood);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: moodColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: moodColor.withOpacity(0.25),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: moodColor.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              todayJournal.moodEmoji,
+              style: const TextStyle(fontSize: 22),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Suasana Hati Hari Ini',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      todayJournal.moodLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: moodColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  todayJournal.content ?? 'Tidak ada catatan refleksi untuk hari ini.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

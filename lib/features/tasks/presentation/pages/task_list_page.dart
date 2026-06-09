@@ -347,6 +347,42 @@ class _TaskListPageState extends ConsumerState<TaskListPage> {
                 ),
               ),
 
+              // Active Tag Filter Indicator
+              SliverToBoxAdapter(
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final activeTag = ref.watch(taskTagFilterProvider);
+                    if (activeTag == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 8.0),
+                      child: Row(
+                        children: [
+                          InputChip(
+                            label: Text(
+                              'Tag: $activeTag',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            onDeleted: () {
+                              ref.read(taskTagFilterProvider.notifier).state = null;
+                            },
+                            deleteIconColor: Theme.of(context).colorScheme.error,
+                            deleteButtonTooltipMessage: 'Hapus Filter',
+                            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.08),
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+
               // Task List
               tasksAsync.when(
                 skipLoadingOnRefresh: true,
@@ -787,6 +823,33 @@ class TaskItemWidget extends ConsumerWidget {
                                 ),
                               ],
                             ),
+
+                          // Tags
+                          if (task.tags.isNotEmpty)
+                            ...task.tags.map((tag) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.secondaryContainer.withOpacity(0.4),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: theme.colorScheme.secondary.withOpacity(0.2),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.local_offer_outlined, size: 9, color: theme.colorScheme.secondary),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    tag,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: theme.colorScheme.onSecondaryContainer,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )),
                         ],
                       ),
                     ],
@@ -853,6 +916,9 @@ void _showFilterSortBottomSheet(BuildContext context, WidgetRef ref) {
         builder: (context, ref, _) {
           final activeCategory = ref.watch(taskCategoryFilterProvider);
           final activeSort = ref.watch(taskSortOptionProvider);
+          
+          final tasks = ref.watch(taskListProvider).valueOrNull ?? [];
+          final allTags = tasks.expand((t) => t.tags).toSet().toList();
 
           final categories = [
             'Semua',
@@ -894,7 +960,8 @@ void _showFilterSortBottomSheet(BuildContext context, WidgetRef ref) {
                       TextButton(
                         onPressed: () {
                           ref.read(taskCategoryFilterProvider.notifier).state = 'Semua';
-                          ref.read(taskSortOptionProvider.notifier).state = TaskSortOption.newest;
+                          ref.read(taskSortOptionProvider.notifier).state = TaskSortOption.priority;
+                          ref.read(taskTagFilterProvider.notifier).state = null;
                         },
                         child: const Text('Reset', style: TextStyle(fontSize: 13)),
                       ),
@@ -978,6 +1045,57 @@ void _showFilterSortBottomSheet(BuildContext context, WidgetRef ref) {
                       },
                     ),
                   ),
+                  const SizedBox(height: 20),
+
+                  // Tag Filter
+                  if (allTags.isNotEmpty) ...[
+                    const Text(
+                      'Filter Label / Tag',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 38,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: allTags.length + 1,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final isAll = index == 0;
+                          final tag = isAll ? 'Semua' : allTags[index - 1];
+                          final activeTag = ref.watch(taskTagFilterProvider);
+                          final isSelected = isAll ? (activeTag == null) : (activeTag == tag);
+
+                          return ChoiceChip(
+                            label: Text(
+                              tag,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isSelected ? Colors.white : Colors.white70,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                            selected: isSelected,
+                            selectedColor: Theme.of(context).colorScheme.primary,
+                            backgroundColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? Colors.transparent
+                                    : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                              ),
+                            ),
+                            onSelected: (selected) {
+                              if (selected) {
+                                ref.read(taskTagFilterProvider.notifier).state = isAll ? null : tag;
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                 ],
               ),
@@ -1061,9 +1179,11 @@ class TaskFormBottomSheetState extends ConsumerState<TaskFormBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  late TextEditingController _tagController;
   late String _priority;
   late String _category;
   DateTime? _dueDate;
+  late List<String> _tags;
 
   final List<String> _categories = ['Kerja', 'Belajar', 'Kesehatan', 'Belanja', 'Lainnya'];
   final List<String> _priorities = ['low', 'medium', 'high'];
@@ -1073,15 +1193,18 @@ class TaskFormBottomSheetState extends ConsumerState<TaskFormBottomSheet> {
     super.initState();
     _titleController = TextEditingController(text: widget.task?.title ?? '');
     _descriptionController = TextEditingController(text: widget.task?.description ?? '');
+    _tagController = TextEditingController();
     _priority = widget.task?.priority ?? 'medium';
     _category = widget.task?.category ?? 'Lainnya';
     _dueDate = widget.task?.dueDate;
+    _tags = List.from(widget.task?.tags ?? []);
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -1128,6 +1251,7 @@ class TaskFormBottomSheetState extends ConsumerState<TaskFormBottomSheet> {
       createdAt: widget.task?.createdAt ?? now,
       updatedAt: now,
       isSynced: false,
+      tags: _tags,
     );
 
     if (widget.task == null) {
@@ -1359,6 +1483,70 @@ class TaskFormBottomSheetState extends ConsumerState<TaskFormBottomSheet> {
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 20),
+
+              // Label / Tag Input & Display
+              const Text(
+                'Label / Tag',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 8),
+              if (_tags.isNotEmpty) ...[
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _tags.map((tag) {
+                    return InputChip(
+                      label: Text(tag, style: const TextStyle(fontSize: 12)),
+                      onDeleted: () {
+                        setState(() {
+                          _tags.remove(tag);
+                        });
+                      },
+                      deleteIconColor: theme.colorScheme.error,
+                      backgroundColor: theme.colorScheme.secondaryContainer.withOpacity(0.3),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+              ],
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _tagController,
+                      decoration: const InputDecoration(
+                        hintText: 'Tambah tag baru...',
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      ),
+                      onSubmitted: (val) {
+                        final trimmed = val.trim();
+                        if (trimmed.isNotEmpty && !_tags.contains(trimmed)) {
+                          setState(() {
+                            _tags.add(trimmed);
+                            _tagController.clear();
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline_rounded),
+                    onPressed: () {
+                      final val = _tagController.text;
+                      final trimmed = val.trim();
+                      if (trimmed.isNotEmpty && !_tags.contains(trimmed)) {
+                        setState(() {
+                          _tags.add(trimmed);
+                          _tagController.clear();
+                        });
+                      }
+                    },
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
 

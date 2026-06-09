@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../../domain/entities/task.dart';
 
 /// Data Model representing Task, extends [Task] entity.
@@ -15,10 +16,21 @@ class TaskModel extends Task {
     required super.createdAt,
     required super.updatedAt,
     super.isSynced,
+    super.tags,
   });
 
   /// Map from SQLite query results to TaskModel
   factory TaskModel.fromSqlMap(Map<String, dynamic> map) {
+    // Parse tags from JSON string
+    List<String> parsedTags = [];
+    if (map['tags'] != null && (map['tags'] as String).isNotEmpty) {
+      try {
+        parsedTags = List<String>.from(jsonDecode(map['tags'] as String));
+      } catch (_) {
+        parsedTags = [];
+      }
+    }
+
     return TaskModel(
       id: map['id'] as String,
       title: map['title'] as String,
@@ -35,11 +47,17 @@ class TaskModel extends Task {
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
       isSynced: (map['is_synced'] as int? ?? 0) == 1,
+      tags: parsedTags,
     );
   }
 
   /// Map from Firestore map to TaskModel
   factory TaskModel.fromFirestoreMap(Map<String, dynamic> map, String docId) {
+    List<String> parsedTags = [];
+    if (map['tags'] != null && map['tags'] is List) {
+      parsedTags = List<String>.from(map['tags']);
+    }
+
     return TaskModel(
       id: docId,
       title: map['title'] as String? ?? '',
@@ -60,6 +78,7 @@ class TaskModel extends Task {
           ? (DateTime.tryParse(map['updated_at'] as String) ?? DateTime.now())
           : DateTime.now(),
       isSynced: true, // Synced because it is fetched from Firestore
+      tags: parsedTags,
     );
   }
 
@@ -77,6 +96,7 @@ class TaskModel extends Task {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'is_synced': isSynced ? 1 : 0,
+      'tags': tags.isNotEmpty ? jsonEncode(tags) : null,
     };
   }
 
@@ -92,6 +112,7 @@ class TaskModel extends Task {
       'completed_at': completedAt?.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'tags': tags,
     };
   }
 
@@ -109,6 +130,7 @@ class TaskModel extends Task {
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
       isSynced: task.isSynced,
+      tags: task.tags,
     );
   }
 
@@ -126,6 +148,7 @@ class TaskModel extends Task {
       createdAt: createdAt,
       updatedAt: updatedAt,
       isSynced: isSynced,
+      tags: tags,
     );
   }
 }

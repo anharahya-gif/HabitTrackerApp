@@ -26,6 +26,7 @@ import '../../../dashboard/presentation/widgets/perfect_week_badge_widget.dart';
 import '../../../dashboard/presentation/widgets/habit_adherence_chart.dart';
 import '../../../dashboard/presentation/widgets/task_velocity_chart.dart';
 import '../../../dashboard/presentation/controllers/gamification_controller.dart';
+import '../../../focus/presentation/controllers/focus_timer_controller.dart';
 
 /// Halaman Profil Pengguna Dailio berdesain premium.
 /// Mendukung login Google reaktif, keluar akun, info sinkronisasi SQLite lokal,
@@ -154,7 +155,8 @@ class ProfilePage extends ConsumerWidget {
       List<Task> tasks,
       AsyncValue<AnalyticsState> analyticsAsync,
       GamificationState game) {
-    final theme = Theme.of(context);
+     final theme = Theme.of(context);
+    final focusStats = ref.watch(focusStatsProvider);
     final isDark = theme.brightness == Brightness.dark;
     final cardColor = isDark ? const Color(0xff1a1d24) : theme.colorScheme.surface;
     final textPrimary = isDark ? const Color(0xffe2e8f0) : theme.colorScheme.onSurface;
@@ -412,6 +414,101 @@ class ProfilePage extends ConsumerWidget {
                       ),
                     ],
                   ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 1.4. Focus Stats Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: theme.colorScheme.primary.withOpacity(0.15),
+              ),
+              gradient: LinearGradient(
+                colors: [
+                  isDark ? const Color(0xff1e1b4b) : Colors.indigo.shade50,
+                  cardColor,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.timer_outlined,
+                            color: theme.colorScheme.primary,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Ringkasan Fokus',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: textPrimary,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Durasi & Sesi Pomodoro',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const Divider(height: 24, color: Colors.white10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildFocusStatItem(
+                      context,
+                      'Hari Ini',
+                      '${focusStats.totalMinutesToday}m',
+                      'Menit fokus hari ini',
+                    ),
+                    _buildFocusStatItem(
+                      context,
+                      'Minggu Ini',
+                      '${focusStats.totalMinutesWeek}m',
+                      'Menit fokus minggu ini',
+                    ),
+                    _buildFocusStatItem(
+                      context,
+                      'Total Sesi',
+                      '${focusStats.totalSessions}',
+                      'Jumlah sesi selesai',
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1316,6 +1413,40 @@ class ProfilePage extends ConsumerWidget {
 //       );
 //     }
 //   }
+
+  Widget _buildFocusStatItem(BuildContext context, String label, String value, String subtitle) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          subtitle,
+          style: TextStyle(
+            fontSize: 9,
+            color: isDark ? const Color(0xff94a3b8) : theme.colorScheme.onSurface.withOpacity(0.6),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// Widget Kustom Logo Google Presisi Tinggi demi Keunggulan Visual

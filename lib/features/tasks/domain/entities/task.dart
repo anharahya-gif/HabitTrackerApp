@@ -11,6 +11,7 @@ class Task {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isSynced;
+  final List<String> tags;
 
   const Task({
     required this.id,
@@ -24,6 +25,7 @@ class Task {
     required this.createdAt,
     required this.updatedAt,
     this.isSynced = false,
+    this.tags = const [],
   });
 
   /// Creates a copy of this Task with the given fields replaced by the new values.
@@ -39,6 +41,7 @@ class Task {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isSynced,
+    List<String>? tags,
   }) {
     return Task(
       id: id ?? this.id,
@@ -52,6 +55,7 @@ class Task {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isSynced: isSynced ?? this.isSynced,
+      tags: tags ?? this.tags,
     );
   }
 }
