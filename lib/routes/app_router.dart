@@ -14,6 +14,8 @@ import '../features/tasks/presentation/pages/task_list_page.dart';
 import '../features/journal/presentation/pages/journal_page.dart';
 import '../features/focus/presentation/pages/focus_timer_page.dart';
 import '../shared/widgets/main_layout_shell.dart';
+import '../features/vault/presentation/pages/vault_lock_page.dart';
+import '../features/vault/presentation/pages/vault_dashboard_page.dart';
 
 /// Konfigurasi navigasi global menggunakan go_router.
 /// Menyediakan rute:
@@ -97,13 +99,21 @@ class AppRouter {
               return const FocusTimerPage();
             },
           ),
+          GoRoute(
+            path: '/vault/dashboard',
+            name: 'vault_dashboard',
+            builder: (BuildContext context, GoRouterState state) {
+              return const VaultDashboardPage();
+            },
+          ),
         ],
       ),
       GoRoute(
         path: '/add-habit',
         name: 'add_habit',
         builder: (BuildContext context, GoRouterState state) {
-          return const AddHabitPage();
+          final isPrivate = state.uri.queryParameters['isPrivate'] == 'true';
+          return AddHabitPage(isPrivateDefault: isPrivate);
         },
       ),
       GoRoute(
@@ -128,6 +138,13 @@ class AppRouter {
         builder: (BuildContext context, GoRouterState state) {
           final habitId = state.pathParameters['id'] ?? '';
           return AlarmScreen(habitId: habitId);
+        },
+      ),
+      GoRoute(
+        path: '/vault',
+        name: 'vault_lock',
+        builder: (BuildContext context, GoRouterState state) {
+          return const VaultLockPage();
         },
       ),
     ],

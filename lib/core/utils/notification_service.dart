@@ -205,11 +205,14 @@ class NotificationService {
 
     final tz.TZDateTime scheduledDate = _nextInstanceOfTime(hour, minute, dayOfWeek);
 
+    final String title = habit.isPrivate ? 'Dailio: Pengingat Rutinitas 🌿' : 'Ayo selesaikan habit-mu! 🌟';
+    final String body = habit.isPrivate ? 'Waktunya untuk check-in aktivitas harianmu!' : 'Waktunya untuk melakukan: ${habit.name}';
+
     try {
       await _notificationsPlugin.zonedSchedule(
         notificationId,
-        'Ayo selesaikan habit-mu! 🌟',
-        'Waktunya untuk melakukan: ${habit.name}',
+        title,
+        body,
         scheduledDate,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -226,8 +229,8 @@ class NotificationService {
       // Fallback ke inexact scheduling jika exact alarm tidak diizinkan di OS Android 14+
       await _notificationsPlugin.zonedSchedule(
         notificationId,
-        'Ayo selesaikan habit-mu! 🌟',
-        'Waktunya untuk melakukan: ${habit.name}',
+        title,
+        body,
         scheduledDate,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
@@ -335,11 +338,14 @@ class NotificationService {
     final tz.TZDateTime scheduledDate =
         tz.TZDateTime.now(tz.local).add(Duration(minutes: snoozeMinutes));
 
+    final String title = habit.isPrivate ? 'Tunda: Pengingat Rutinitas 🌿' : 'Tunda: Ayo selesaikan habit-mu! 🌟';
+    final String body = habit.isPrivate ? 'Waktunya untuk check-in aktivitas harianmu!' : 'Waktunya untuk melakukan: ${habit.name}';
+
     try {
       await _notificationsPlugin.zonedSchedule(
         snoozeNotificationId,
-        'Tunda: Ayo selesaikan habit-mu! 🌟',
-        'Waktunya untuk melakukan: ${habit.name}',
+        title,
+        body,
         scheduledDate,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -350,8 +356,8 @@ class NotificationService {
     } catch (e) {
       await _notificationsPlugin.zonedSchedule(
         snoozeNotificationId,
-        'Tunda: Ayo selesaikan habit-mu! 🌟',
-        'Waktunya untuk melakukan: ${habit.name}',
+        title,
+        body,
         scheduledDate,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,

@@ -9,7 +9,8 @@ import '../controllers/habit_list_controller.dart';
 
 /// Form Tambah Habit baru dengan pilihan warna, kategori, tipe, dan pengingat waktu.
 class AddHabitPage extends ConsumerStatefulWidget {
-  const AddHabitPage({super.key});
+  final bool isPrivateDefault;
+  const AddHabitPage({super.key, this.isPrivateDefault = false});
 
   @override
   ConsumerState<AddHabitPage> createState() => _AddHabitPageState();
@@ -23,6 +24,7 @@ class _AddHabitPageState extends ConsumerState<AddHabitPage> {
   String _category = 'Kesehatan';
   String _type = 'daily'; // 'daily', 'weekly', 'specific_days', 'interval', 'flexible_weekly'
   TimeOfDay? _reminderTime;
+  bool _isPrivate = false;
 
   // Variabel konfigurasi frekuensi kustom
   final List<int> _specificDays = [1, 3, 5]; // default: Senin, Rabu, Jumat
@@ -60,6 +62,7 @@ class _AddHabitPageState extends ConsumerState<AddHabitPage> {
   @override
   void initState() {
     super.initState();
+    _isPrivate = widget.isPrivateDefault;
     _selectedColor = _colors.first;
     _loadAlarmSounds();
   }
@@ -241,6 +244,7 @@ class _AddHabitPageState extends ConsumerState<AddHabitPage> {
       reminderType: _reminderType,
       alarmSound: _selectedSoundUri,
       frequencyConfig: frequencyConfigStr,
+      isPrivate: _isPrivate,
     );
 
     // Kirim aksi ke controller
@@ -799,6 +803,26 @@ class _AddHabitPageState extends ConsumerState<AddHabitPage> {
                         );
                       },
                     ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Toggle Privat
+                  SwitchListTile(
+                    title: const Text(
+                      'Habit Privat (Simpan di Vault) 🔒',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    subtitle: const Text(
+                      'Sembunyikan dari dashboard umum, widget, dan calendar sync',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                    value: _isPrivate,
+                    onChanged: (val) {
+                      setState(() {
+                        _isPrivate = val;
+                      });
+                    },
+                    contentPadding: EdgeInsets.zero,
                   ),
                   const SizedBox(height: 40),
 

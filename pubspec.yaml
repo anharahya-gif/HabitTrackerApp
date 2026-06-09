@@ -56,6 +56,7 @@ dependencies:
   # Google API REST Calls and Settings persistence
   http: ^1.2.0
   shared_preferences: ^2.2.0
+  local_auth: ^2.2.0
 
   # Pustaka grafik interaktif
   fl_chart: ^0.68.0

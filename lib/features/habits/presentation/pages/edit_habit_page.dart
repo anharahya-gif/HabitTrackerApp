@@ -30,6 +30,7 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
   TimeOfDay? _endTime;
   late int _selectedColor;
   String _reminderType = 'notification';
+  bool _isPrivate = false;
 
   // Variabel konfigurasi frekuensi kustom
   List<int> _specificDays = [1, 3, 5]; // default: Senin, Rabu, Jumat
@@ -146,6 +147,7 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
     _selectedColor = habit.color;
     _reminderType = habit.reminderType;
     _selectedSoundUri = habit.alarmSound;
+    _isPrivate = habit.isPrivate;
 
     if (habit.reminderTime != null) {
       final parts = habit.reminderTime!.split(':');
@@ -305,6 +307,7 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
       reminderType: _reminderType,
       alarmSound: _selectedSoundUri,
       frequencyConfig: frequencyConfigStr,
+      isPrivate: _isPrivate,
     );
 
     // Kirim aksi pembaruan ke controller
@@ -874,6 +877,26 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
                             );
                           },
                         ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Toggle Privat
+                      SwitchListTile(
+                        title: const Text(
+                          'Habit Privat (Simpan di Vault) 🔒',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        subtitle: const Text(
+                          'Sembunyikan dari dashboard umum, widget, dan calendar sync',
+                          style: TextStyle(fontSize: 11),
+                        ),
+                        value: _isPrivate,
+                        onChanged: (val) {
+                          setState(() {
+                            _isPrivate = val;
+                          });
+                        },
+                        contentPadding: EdgeInsets.zero,
                       ),
                       const SizedBox(height: 40),
 

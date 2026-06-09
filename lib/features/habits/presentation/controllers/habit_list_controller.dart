@@ -41,13 +41,14 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
   /// Memperbarui data Home Screen Widget dengan daftar habit, streak, dan log hari ini.
   Future<void> _updateHomeWidget(List<Habit> habits) async {
     try {
+      final publicHabits = habits.where((h) => !h.isPrivate).toList();
       final habitRepo = ref.read(habitRepositoryProvider);
       final trackingRepo = ref.read(trackingRepositoryProvider);
       final todayStr = DateFormatter.todayString;
 
       // Ambil streak dan log hari ini untuk semua habit secara paralel
-      final streakFutures = habits.map((h) => habitRepo.getHabitStreak(h.id));
-      final logFutures = habits.map((h) => trackingRepo.getLogForHabitAndDate(h.id, todayStr));
+      final streakFutures = publicHabits.map((h) => habitRepo.getHabitStreak(h.id));
+      final logFutures = publicHabits.map((h) => trackingRepo.getLogForHabitAndDate(h.id, todayStr));
 
       final streakResults = await Future.wait(streakFutures);
       final logResults = await Future.wait(logFutures);
@@ -55,19 +56,19 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
       final Map<String, HabitStreak?> streaks = {};
       final Map<String, HabitLog?> todayLogs = {};
 
-      for (int i = 0; i < habits.length; i++) {
-        streaks[habits[i].id] = streakResults[i].fold(
+      for (int i = 0; i < publicHabits.length; i++) {
+        streaks[publicHabits[i].id] = streakResults[i].fold(
           onSuccess: (s) => s,
           onFailure: (_) => null,
         );
-        todayLogs[habits[i].id] = logResults[i].fold(
+        todayLogs[publicHabits[i].id] = logResults[i].fold(
           onSuccess: (l) => l,
           onFailure: (_) => null,
         );
       }
 
       await HomeWidgetService.updateWidgetData(
-        habits: habits,
+        habits: publicHabits,
         streaks: streaks,
         todayLogs: todayLogs,
       );
@@ -200,7 +201,8 @@ class HabitListController extends AsyncNotifier<List<Habit>> {
         final calendarState = ref.read(productivityCalendarControllerProvider);
         if (calendarState.googleCalendarSyncEnabled && calendarState.autoSyncHabits) {
           final habits = state.valueOrNull ?? [];
-          ref.read(googleCalendarServiceProvider).syncHabits(habits).catchError((e) {
+          final publicHabits = habits.where((h) => !h.isPrivate).toList();
+          ref.read(googleCalendarServiceProvider).syncHabits(publicHabits).catchError((e) {
             debugPrint('Google Calendar Habit Sync Error: $e');
           });
         }
@@ -255,8 +257,8 @@ final filteredHabitsProvider = Provider<AsyncValue<List<Habit>>>((ref) {
   final sortOption = ref.watch(habitSortOptionProvider);
 
   return habitsAsync.whenData((habits) {
-    // 1. Lakukan penyaringan Kategori
-    var resultList = habits;
+    // Saring agar hanya mengembalikan habit umum (bukan privat)
+    var resultList = habits.where((h) => !h.isPrivate).toList();
     if (categoryFilter != 'Semua') {
       resultList = resultList.where((h) => h.category == categoryFilter).toList();
     }
@@ -290,6 +292,94 @@ final todayHabitsProvider = Provider<AsyncValue<List<Habit>>>((ref) {
   final habitsAsync = ref.watch(filteredHabitsProvider);
 
   return habitsAsync.whenData((habits) {
+    final today = DateTime.now();
+    final todayStr = DateFormatter.todayString;
+    final weekday = today.weekday; // 1 = Mon, 7 = Sun
+
+    return habits.where((habit) {
+      // 1. Tipe Harian (daily) -> Selalu aktif setiap hari
+      if (habit.type == 'daily') {
+        return true;
+      }
+
+      // 2. Tipe Hari Spesifik (specific_days)
+      if (habit.type == 'specific_days') {
+        if (habit.frequencyConfig != null) {
+          try {
+            final config = jsonDecode(habit.frequencyConfig!) as Map<String, dynamic>;
+            final days = List<int>.from(config['days'] ?? []);
+            return days.contains(weekday);
+          } catch (_) {
+            return false;
+          }
+        }
+        return false;
+      }
+
+      // 3. Tipe Interval Hari (interval)
+      if (habit.type == 'interval') {
+        if (habit.frequencyConfig != null) {
+          try {
+            final config = jsonDecode(habit.frequencyConfig!) as Map<String, dynamic>;
+            final intervalDays = config['interval_days'] as int? ?? 2;
+            final diffDays = DateFormatter.daysBetween(
+              DateFormatter.formatDate(habit.createdAt),
+              todayStr,
+            );
+            return diffDays >= 0 && (diffDays % intervalDays == 0);
+          } catch (_) {
+            return false;
+          }
+        }
+        return false;
+      }
+
+      // 4. Kustom Mingguan (flexible_weekly) atau Mingguan (weekly)
+      if (habit.type == 'flexible_weekly' || habit.type == 'weekly') {
+        // Tampil setiap hari selama target minggu ini belum tercapai, atau jika hari ini sudah dicentang/dilog.
+        // Cek apakah hari ini sudah dicentang:
+        final todayLogAsync = ref.watch(habitTodayLogProvider(habit.id));
+        final todayLog = todayLogAsync.valueOrNull;
+        if (todayLog != null && (todayLog.status == 'done' || todayLog.status == 'skipped')) {
+          return true; // Tampilkan jika hari ini sudah diselesaikan/dilewati
+        }
+
+        // Jika hari ini belum dicentang, cek apakah target mingguan sudah tercapai:
+        final weeklyCompletionsAsync = ref.watch(habitWeeklyCompletionsProvider(habit.id));
+        final weeklyCompletions = weeklyCompletionsAsync.valueOrNull ?? 0;
+        final targetCount = habit.type == 'weekly'
+            ? 1
+            : (() {
+                if (habit.frequencyConfig != null) {
+                  try {
+                    final config = jsonDecode(habit.frequencyConfig!) as Map<String, dynamic>;
+                    return config['target_count'] as int? ?? 3;
+                  } catch (_) {}
+                }
+                return 3;
+              })();
+
+        return weeklyCompletions < targetCount;
+      }
+
+      return true; // default fallback
+    }).toList();
+  });
+});
+
+/// Provider untuk mengambil semua habit privat
+final privateHabitsProvider = Provider<AsyncValue<List<Habit>>>((ref) {
+  final habitsAsync = ref.watch(habitListProvider);
+  return habitsAsync.whenData((habits) {
+    return habits.where((h) => h.isPrivate).toList();
+  });
+});
+
+/// Provider untuk mengambil habit privat yang aktif hari ini
+final todayPrivateHabitsProvider = Provider<AsyncValue<List<Habit>>>((ref) {
+  final privateHabitsAsync = ref.watch(privateHabitsProvider);
+
+  return privateHabitsAsync.whenData((habits) {
     final today = DateTime.now();
     final todayStr = DateFormatter.todayString;
     final weekday = today.weekday; // 1 = Mon, 7 = Sun

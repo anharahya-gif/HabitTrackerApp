@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 8, // Naikkan versi ke 8 untuk mendukung frequency_config di habits
+      version: 9, // Naikkan versi ke 9 untuk mendukung is_private di habits
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -52,7 +52,8 @@ class DatabaseHelper {
         end_time TEXT,
         reminder_type TEXT NOT NULL DEFAULT 'notification',
         alarm_sound TEXT,
-        frequency_config TEXT
+        frequency_config TEXT,
+        is_private INTEGER NOT NULL DEFAULT 0
       )
     ''');
 
@@ -208,6 +209,12 @@ class DatabaseHelper {
     if (oldVersion < 8) {
       if (!await _columnExists(db, 'habits', 'frequency_config')) {
         await db.execute('ALTER TABLE habits ADD COLUMN frequency_config TEXT');
+      }
+    }
+
+    if (oldVersion < 9) {
+      if (!await _columnExists(db, 'habits', 'is_private')) {
+        await db.execute('ALTER TABLE habits ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0');
       }
     }
   }
