@@ -907,7 +907,7 @@ class TaskItemWidget extends ConsumerWidget {
 void _showFilterSortBottomSheet(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: const Color(0xff111318),
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),

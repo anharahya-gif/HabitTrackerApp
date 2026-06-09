@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/database/database_helper.dart';
 import '../core/utils/date_formatter.dart';
@@ -31,15 +32,29 @@ import '../features/auth/presentation/controllers/auth_controller.dart';
 import '../features/journal/data/datasources/journal_local_data_source.dart';
 import '../features/journal/data/repositories/journal_repository_impl.dart';
 import '../features/journal/domain/repositories/journal_repository.dart';
+import '../core/services/backup_service.dart';
+import '../core/services/google_drive_service.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 final googleCalendarServiceProvider = Provider<GoogleCalendarService>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
   return GoogleCalendarService(authRepository: authRepository);
 });
 
+final googleDriveServiceProvider = Provider<GoogleDriveService>((ref) {
+  final authRepository = ref.watch(authRepositoryProvider);
+  return GoogleDriveService(authRepository: authRepository);
+});
+
 // ==========================================
 // 1. DATABASE & DATA SOURCES PROVIDERS
 // ==========================================
+
+/// Provider untuk mengakses SharedPreferences secara sinkron (wajib di-override di main.dart)
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  throw UnimplementedError('sharedPreferencesProvider must be overridden in ProviderScope');
+});
 
 final databaseHelperProvider = Provider<DatabaseHelper>((ref) {
   return DatabaseHelper.instance;
@@ -107,6 +122,10 @@ final taskRepositoryProvider = Provider<TaskRepository>((ref) {
 final journalRepositoryProvider = Provider<JournalRepository>((ref) {
   final localDataSource = ref.watch(journalLocalDataSourceProvider);
   return JournalRepositoryImpl(localDataSource);
+});
+
+final backupServiceProvider = Provider<BackupService>((ref) {
+  return BackupService();
 });
 
 // ==========================================
@@ -199,4 +218,116 @@ final habitTodayLogProvider = FutureProvider.family<HabitLog?, String>((ref, hab
     onSuccess: (log) => log,
     onFailure: (_) => null,
   );
+});
+
+final habitWeeklyCompletionsProvider = FutureProvider.family<int, String>((ref, habitId) async {
+  final repository = ref.watch(trackingRepositoryProvider);
+  final result = await repository.getLogsForHabit(habitId);
+  return result.fold(
+    onSuccess: (logs) {
+      final now = DateTime.now();
+      final monday = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+      final sunday = monday.add(const Duration(days: 6));
+      final mondayStr = DateFormatter.formatDate(monday);
+      final sundayStr = DateFormatter.formatDate(sunday);
+      
+      return logs.where((l) => 
+        l.status == 'done' && 
+        l.date.compareTo(mondayStr) >= 0 && 
+        l.date.compareTo(sundayStr) <= 0
+      ).length;
+    },
+    onFailure: (_) => 0,
+  );
+});
+
+class AutoBackupNotifier extends StateNotifier<String> {
+  final SharedPreferences _prefs;
+  AutoBackupNotifier(this._prefs) : super(_prefs.getString('auto_backup_frequency') ?? 'off');
+
+  Future<void> setFrequency(String val) async {
+    await _prefs.setString('auto_backup_frequency', val);
+    state = val;
+  }
+}
+
+final autoBackupFrequencyProvider = StateNotifierProvider<AutoBackupNotifier, String>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return AutoBackupNotifier(prefs);
+});
+
+class LastBackupTimeNotifier extends StateNotifier<String> {
+  final SharedPreferences _prefs;
+  LastBackupTimeNotifier(this._prefs) : super(_prefs.getString('last_backup_time') ?? 'Belum pernah');
+
+  Future<void> updateLastBackupTime() async {
+    final nowStr = DateTime.now().toIso8601String();
+    await _prefs.setString('last_backup_time', nowStr);
+    state = nowStr;
+  }
+
+  Future<void> setLastBackupTime(String val) async {
+    await _prefs.setString('last_backup_time', val);
+    state = val;
+  }
+}
+
+final lastBackupTimeProvider = StateNotifierProvider<LastBackupTimeNotifier, String>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return LastBackupTimeNotifier(prefs);
+});
+
+/// Provider pemicu auto-backup terjadwal ke Google Drive di latar belakang.
+final autoBackupTriggerProvider = Provider<void>((ref) {
+  final authState = ref.watch(authControllerProvider);
+  final user = authState.valueOrNull;
+  if (user == null || user.isGuest || user.id == 'demo_user_google_123') return;
+
+  final freq = ref.watch(autoBackupFrequencyProvider);
+  if (freq == 'off') return;
+
+  final lastBackupStr = ref.watch(lastBackupTimeProvider);
+
+  // Jalankan asinkron setelah build selesai untuk menghindari side-effects selama fasa render
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    final now = DateTime.now();
+    bool shouldBackup = false;
+
+    if (lastBackupStr == 'Belum pernah') {
+      shouldBackup = true;
+    } else {
+      try {
+        final lastBackup = DateTime.parse(lastBackupStr);
+        final diff = now.difference(lastBackup);
+        if (freq == 'daily' && diff.inDays >= 1) {
+          shouldBackup = true;
+        } else if (freq == 'weekly' && diff.inDays >= 7) {
+          shouldBackup = true;
+        }
+      } catch (_) {
+        shouldBackup = true;
+      }
+    }
+
+    if (shouldBackup) {
+      debugPrint('Auto-Backup: Memulai pengunggahan terjadwal otomatis...');
+      try {
+        final hasScope = await ref.read(authRepositoryProvider).requestDriveScope();
+        if (hasScope) {
+          final backupData = await ref.read(backupServiceProvider).exportBackup();
+          final success = await ref.read(googleDriveServiceProvider).uploadBackup(backupData);
+          if (success) {
+            await ref.read(lastBackupTimeProvider.notifier).updateLastBackupTime();
+            debugPrint('Auto-Backup: Sukses mencadangkan ke Google Drive.');
+          } else {
+            debugPrint('Auto-Backup: Gagal mengunggah berkas.');
+          }
+        } else {
+          debugPrint('Auto-Backup: Otorisasi Google Drive belum diberikan.');
+        }
+      } catch (e) {
+        debugPrint('Auto-Backup: Gagal melakukan sinkronisasi otomatis: $e');
+      }
+    }
+  });
 });

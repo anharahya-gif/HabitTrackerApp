@@ -187,4 +187,29 @@ class AuthRepositoryImpl implements AuthRepository {
       return false;
     }
   }
+
+  @override
+  Future<bool> requestDriveScope() async {
+    try {
+      var account = _googleSignIn.currentUser;
+      if (account == null) {
+        debugPrint('Dailio Auth: requestDriveScope - currentUser null, mencoba signInSilently...');
+        account = await _googleSignIn.signInSilently();
+      }
+      if (account == null) {
+        debugPrint('Dailio Auth: requestDriveScope - signInSilently gagal, tidak ada sesi Google aktif.');
+        return false;
+      }
+
+      debugPrint('Dailio Auth: requestDriveScope - Meminta scope drive.file...');
+      final result = await _googleSignIn.requestScopes([
+        'https://www.googleapis.com/auth/drive.file',
+      ]);
+      debugPrint('Dailio Auth: requestDriveScope - Hasil requestScopes: $result');
+      return result;
+    } catch (e) {
+      debugPrint('Dailio Auth: requestDriveScope - Error: $e');
+      return false;
+    }
+  }
 }

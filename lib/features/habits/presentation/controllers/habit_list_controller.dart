@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/failure.dart';
@@ -281,5 +282,85 @@ final filteredHabitsProvider = Provider<AsyncValue<List<Habit>>>((ref) {
     }
 
     return resultList;
+  });
+});
+
+/// Provider gabungan untuk menyaring hanya Habit yang aktif hari ini
+final todayHabitsProvider = Provider<AsyncValue<List<Habit>>>((ref) {
+  final habitsAsync = ref.watch(filteredHabitsProvider);
+
+  return habitsAsync.whenData((habits) {
+    final today = DateTime.now();
+    final todayStr = DateFormatter.todayString;
+    final weekday = today.weekday; // 1 = Mon, 7 = Sun
+
+    return habits.where((habit) {
+      // 1. Tipe Harian (daily) -> Selalu aktif setiap hari
+      if (habit.type == 'daily') {
+        return true;
+      }
+
+      // 2. Tipe Hari Spesifik (specific_days)
+      if (habit.type == 'specific_days') {
+        if (habit.frequencyConfig != null) {
+          try {
+            final config = jsonDecode(habit.frequencyConfig!) as Map<String, dynamic>;
+            final days = List<int>.from(config['days'] ?? []);
+            return days.contains(weekday);
+          } catch (_) {
+            return false;
+          }
+        }
+        return false;
+      }
+
+      // 3. Tipe Interval Hari (interval)
+      if (habit.type == 'interval') {
+        if (habit.frequencyConfig != null) {
+          try {
+            final config = jsonDecode(habit.frequencyConfig!) as Map<String, dynamic>;
+            final intervalDays = config['interval_days'] as int? ?? 2;
+            final diffDays = DateFormatter.daysBetween(
+              DateFormatter.formatDate(habit.createdAt),
+              todayStr,
+            );
+            return diffDays >= 0 && (diffDays % intervalDays == 0);
+          } catch (_) {
+            return false;
+          }
+        }
+        return false;
+      }
+
+      // 4. Kustom Mingguan (flexible_weekly) atau Mingguan (weekly)
+      if (habit.type == 'flexible_weekly' || habit.type == 'weekly') {
+        // Tampil setiap hari selama target minggu ini belum tercapai, atau jika hari ini sudah dicentang/dilog.
+        // Cek apakah hari ini sudah dicentang:
+        final todayLogAsync = ref.watch(habitTodayLogProvider(habit.id));
+        final todayLog = todayLogAsync.valueOrNull;
+        if (todayLog != null && (todayLog.status == 'done' || todayLog.status == 'skipped')) {
+          return true; // Tampilkan jika hari ini sudah diselesaikan/dilewati
+        }
+
+        // Jika hari ini belum dicentang, cek apakah target mingguan sudah tercapai:
+        final weeklyCompletionsAsync = ref.watch(habitWeeklyCompletionsProvider(habit.id));
+        final weeklyCompletions = weeklyCompletionsAsync.valueOrNull ?? 0;
+        final targetCount = habit.type == 'weekly'
+            ? 1
+            : (() {
+                if (habit.frequencyConfig != null) {
+                  try {
+                    final config = jsonDecode(habit.frequencyConfig!) as Map<String, dynamic>;
+                    return config['target_count'] as int? ?? 3;
+                  } catch (_) {}
+                }
+                return 3;
+              })();
+
+        return weeklyCompletions < targetCount;
+      }
+
+      return true; // default fallback
+    }).toList();
   });
 });

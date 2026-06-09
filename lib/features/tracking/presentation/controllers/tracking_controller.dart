@@ -63,6 +63,7 @@ class TrackingController extends AutoDisposeNotifier<TrackingState> {
         // 3. Segarkan provider family individu secara reaktif
         ref.refresh(habitStreakProvider(habitId)); // ignore: unused_result
         ref.refresh(habitTodayLogProvider(habitId)); // ignore: unused_result
+        ref.refresh(habitWeeklyCompletionsProvider(habitId)); // ignore: unused_result
 
         // 3.5. Gamifikasi: Berikan XP dan siram tanaman
         if (status == 'done') {

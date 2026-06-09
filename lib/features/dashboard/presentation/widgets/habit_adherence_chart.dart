@@ -83,7 +83,7 @@ class _HabitAdherenceChartState extends State<HabitAdherenceChart> {
                 height: 32,
                 padding: const EdgeInsets.all(2),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xff111318) : Colors.grey.shade200,
+                  color: isDark ? Theme.of(context).scaffoldBackgroundColor : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(

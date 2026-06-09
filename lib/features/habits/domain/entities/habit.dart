@@ -15,6 +15,7 @@ class Habit {
   final String? endTime; // e.g. '10:00'
   final String reminderType; // 'notification' atau 'alarm'
   final String? alarmSound; // URI nada suara alarm kustom (e.g. content://media/internal/audio/media/12)
+  final String? frequencyConfig; // Konfigurasi frekuensi kustom dalam format JSON string (e.g. specific days / interval)
 
   const Habit({
     required this.id,
@@ -32,6 +33,7 @@ class Habit {
     this.endTime,
     this.reminderType = 'notification',
     this.alarmSound,
+    this.frequencyConfig,
   });
 
   /// Menggandakan entitas dengan perubahan properti tertentu.
@@ -51,6 +53,7 @@ class Habit {
     String? endTime,
     String? reminderType,
     String? alarmSound,
+    String? frequencyConfig,
   }) {
     return Habit(
       id: id ?? this.id,
@@ -68,6 +71,7 @@ class Habit {
       endTime: endTime ?? this.endTime,
       reminderType: reminderType ?? this.reminderType,
       alarmSound: alarmSound ?? this.alarmSound,
+      frequencyConfig: frequencyConfig ?? this.frequencyConfig,
     );
   }
 }

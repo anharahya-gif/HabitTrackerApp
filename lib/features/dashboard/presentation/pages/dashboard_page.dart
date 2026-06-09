@@ -76,10 +76,13 @@ class DashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final habitsAsync = ref.watch(filteredHabitsProvider);
+    final habitsAsync = ref.watch(todayHabitsProvider);
     final tasksAsync = ref.watch(todayTasksProvider);
     final authState = ref.watch(authControllerProvider);
     final user = authState.valueOrNull ?? AppUser.guest;
+
+    // Pemicu auto-backup terjadwal ke Google Drive
+    ref.watch(autoBackupTriggerProvider);
 
     // Watch real-time clock
     final currentTimeAsync = ref.watch(dashboardTimeProvider);
@@ -420,7 +423,7 @@ class _DashboardStatsBannerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final habitsAsync = ref.watch(habitListProvider);
+    final habitsAsync = ref.watch(todayHabitsProvider);
     final tasksAsync = ref.watch(todayTasksProvider);
 
     return habitsAsync.maybeWhen(
@@ -909,7 +912,7 @@ class _DashboardSmallEmpty extends StatelessWidget {
 void _showDashboardAddOptions(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: const Color(0xff111318),
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),

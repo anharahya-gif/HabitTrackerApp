@@ -112,7 +112,17 @@ class HabitItemWidget extends ConsumerWidget {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      habit.type == 'daily' ? 'Harian' : 'Mingguan',
+                                      habit.type == 'daily'
+                                          ? 'Harian'
+                                          : habit.type == 'weekly'
+                                              ? 'Mingguan'
+                                              : habit.type == 'specific_days'
+                                                  ? 'Hari Spesifik'
+                                                  : habit.type == 'interval'
+                                                      ? 'Interval'
+                                                      : habit.type == 'flexible_weekly'
+                                                          ? 'Kustom Mingguan'
+                                                          : habit.type,
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: Theme.of(context).colorScheme.onSurfaceVariant,

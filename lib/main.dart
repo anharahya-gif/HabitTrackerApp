@@ -2,9 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'routes/app_router.dart';
 import 'shared/theme/app_theme.dart';
+import 'shared/theme/theme_settings_provider.dart';
+import 'shared/providers.dart';
 import 'core/utils/notification_service.dart';
 import 'core/utils/home_widget_service.dart';
 
@@ -12,6 +15,9 @@ void main() async {
   // Memastikan framework binding Flutter diinisialisasi sebelum proses sinkronisasi database dijalankan
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Inisialisasi SharedPreferences secara awal
+  final sharedPrefs = await SharedPreferences.getInstance();
+
   // Inisialisasi Firebase Cloud
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -32,8 +38,11 @@ void main() async {
   
   runApp(
     // Membungkus seluruh aplikasi dengan ProviderScope untuk state management Riverpod
-    const ProviderScope(
-      child: MyApp(),
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sharedPrefs),
+      ],
+      child: const MyApp(),
     ),
   );
 }
@@ -69,14 +78,29 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
+    final themeSettings = ref.watch(themeSettingsProvider);
+
+    final customAccent = themeSettings.customAccentColor != null 
+        ? Color(themeSettings.customAccentColor!) 
+        : null;
 
     return MaterialApp.router(
       title: 'Dailio',
       debugShowCheckedModeBanner: false,
       
-      // Integrasi Tema Premium Light & Dark Mode
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      // Integrasi Tema Premium Light & Dark Mode yang Dinamis
+      theme: AppTheme.buildTheme(
+        brightness: Brightness.light,
+        preset: themeSettings.preset,
+        customAccent: customAccent,
+        fontFamily: themeSettings.fontFamily,
+      ),
+      darkTheme: AppTheme.buildTheme(
+        brightness: Brightness.dark,
+        preset: themeSettings.preset,
+        customAccent: customAccent,
+        fontFamily: themeSettings.fontFamily,
+      ),
       themeMode: themeMode,
 
       // Integrasi Navigasi GoRouter Terpusat

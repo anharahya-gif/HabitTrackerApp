@@ -23,4 +23,7 @@ abstract class AuthRepository {
 
   /// Meminta izin scope Google Calendar secara bertahap (incremental authorization).
   Future<bool> requestCalendarScope();
+
+  /// Meminta izin scope Google Drive secara bertahap untuk melakukan backup data.
+  Future<bool> requestDriveScope();
 }

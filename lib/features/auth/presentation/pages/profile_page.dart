@@ -89,9 +89,7 @@ class ProfilePage extends ConsumerWidget {
         context.go('/home');
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xff111318)
-            : Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
         appBar: AppBar(
           title: const Text('Profil Dailio'),
@@ -207,7 +205,7 @@ class ProfilePage extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: user.isAuthenticated ? AppTheme.statusDone : AppTheme.accentPrimary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? const Color(0xff111318) : theme.scaffoldBackgroundColor, width: 2),
+                    border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
                   ),
                   child: Icon(
                     user.isAuthenticated ? Icons.verified : Icons.lock_outline,
@@ -779,7 +777,7 @@ class ProfilePage extends ConsumerWidget {
               ),
               SizedBox(height: 4),
               Text(
-                'Versi 1.0.0 (Guest Mode Pluggable)',
+                'Versi 1.2.0 (Guest Mode Pluggable)',
                 style: TextStyle(color: Color(0xff334155), fontSize: 10),
               ),
             ],

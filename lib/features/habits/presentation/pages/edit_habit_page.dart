@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,12 +24,17 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
 
   bool _isInitialized = false;
   String _category = 'Kesehatan';
-  String _type = 'daily'; // 'daily' atau 'weekly'
+  String _type = 'daily'; // 'daily', 'weekly', 'specific_days', 'interval', 'flexible_weekly'
   TimeOfDay? _reminderTime;
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
   late int _selectedColor;
   String _reminderType = 'notification';
+
+  // Variabel konfigurasi frekuensi kustom
+  List<int> _specificDays = [1, 3, 5]; // default: Senin, Rabu, Jumat
+  int _intervalDays = 2; // default: Setiap 2 hari
+  int _flexibleWeeklyTarget = 3; // default: 3x seminggu
 
   List<Map<String, String>> _availableSounds = [];
   String? _selectedSoundUri;
@@ -165,6 +171,22 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
         _endTime = TimeOfDay(hour: hour, minute: minute);
       }
     }
+
+    if (habit.frequencyConfig != null) {
+      try {
+        final config = jsonDecode(habit.frequencyConfig!) as Map<String, dynamic>;
+        if (habit.type == 'specific_days' && config.containsKey('days')) {
+          _specificDays = List<int>.from(config['days'] as List);
+        } else if (habit.type == 'interval' && config.containsKey('interval_days')) {
+          _intervalDays = config['interval_days'] as int;
+        } else if (habit.type == 'flexible_weekly' && config.containsKey('target_count')) {
+          _flexibleWeeklyTarget = config['target_count'] as int;
+        }
+      } catch (e) {
+        debugPrint('Gagal men-decode frequencyConfig: $e');
+      }
+    }
+
     _isInitialized = true;
   }
 
@@ -259,6 +281,15 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
         ? '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'
         : null;
 
+    String? frequencyConfigStr;
+    if (_type == 'specific_days') {
+      frequencyConfigStr = jsonEncode({'days': _specificDays});
+    } else if (_type == 'interval') {
+      frequencyConfigStr = jsonEncode({'interval_days': _intervalDays});
+    } else if (_type == 'flexible_weekly') {
+      frequencyConfigStr = jsonEncode({'target_count': _flexibleWeeklyTarget});
+    }
+
     // Gandakan objek habit dengan nilai terbarui
     final updatedHabit = originalHabit.copyWith(
       name: _nameController.text.trim(),
@@ -273,6 +304,7 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
       endTime: endTimeStr,
       reminderType: _reminderType,
       alarmSound: _selectedSoundUri,
+      frequencyConfig: frequencyConfigStr,
     );
 
     // Kirim aksi pembaruan ke controller
@@ -426,6 +458,18 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
                                       value: 'weekly',
                                       child: Text('Mingguan', style: TextStyle(fontSize: 14)),
                                     ),
+                                    DropdownMenuItem(
+                                      value: 'specific_days',
+                                      child: Text('Hari Spesifik', style: TextStyle(fontSize: 14)),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'interval',
+                                      child: Text('Interval Hari', style: TextStyle(fontSize: 14)),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'flexible_weekly',
+                                      child: Text('Kustom Mingguan', style: TextStyle(fontSize: 14)),
+                                    ),
                                   ],
                                   onChanged: (val) {
                                     if (val != null) setState(() => _type = val);
@@ -439,6 +483,87 @@ class _EditHabitPageState extends ConsumerState<EditHabitPage> {
                           ),
                         ],
                       ),
+                      
+                      // Panel Konfigurasi Frekuensi Kustom
+                      if (_type == 'specific_days') ...[
+                        const SizedBox(height: 16),
+                        const Text('Pilih Hari Pelaksanaan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                        const SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: List.generate(7, (index) {
+                            final dayVal = index + 1; // 1 = Mon, 7 = Sun
+                            final labels = ['S', 'S', 'R', 'K', 'J', 'S', 'M'];
+                            final isSelected = _specificDays.contains(dayVal);
+
+                            return ChoiceChip(
+                              label: Text(labels[index], style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : Colors.white70)),
+                              selected: isSelected,
+                              selectedColor: Theme.of(context).primaryColor,
+                              backgroundColor: Colors.transparent,
+                              shape: const CircleBorder(
+                                side: BorderSide(color: Colors.transparent),
+                              ),
+                              showCheckmark: false,
+                              onSelected: (selected) {
+                                setState(() {
+                                  if (selected) {
+                                    if (!_specificDays.contains(dayVal)) {
+                                      _specificDays.add(dayVal);
+                                    }
+                                  } else {
+                                    if (_specificDays.length > 1) {
+                                      _specificDays.remove(dayVal);
+                                    }
+                                  }
+                                });
+                              },
+                            );
+                          }),
+                        ),
+                      ] else if (_type == 'interval') ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Setiap Berapa Hari?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                            Text('Setiap $_intervalDays hari sekali', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
+                          ],
+                        ),
+                        Slider(
+                          value: _intervalDays.toDouble(),
+                          min: 2,
+                          max: 30,
+                          divisions: 28,
+                          label: 'Setiap $_intervalDays hari',
+                          onChanged: (val) {
+                            setState(() {
+                              _intervalDays = val.toInt();
+                            });
+                          },
+                        ),
+                      ] else if (_type == 'flexible_weekly') ...[
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Target Frekuensi Per Minggu', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+                            Text('$_flexibleWeeklyTarget kali seminggu', style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold, fontSize: 13)),
+                          ],
+                        ),
+                        Slider(
+                          value: _flexibleWeeklyTarget.toDouble(),
+                          min: 1,
+                          max: 6,
+                          divisions: 5,
+                          label: '$_flexibleWeeklyTarget kali',
+                          onChanged: (val) {
+                            setState(() {
+                              _flexibleWeeklyTarget = val.toInt();
+                            });
+                          },
+                        ),
+                      ],
                       const SizedBox(height: 24),
 
                       // Pengingat Waktu (Reminder Time)

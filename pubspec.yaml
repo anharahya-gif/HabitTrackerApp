@@ -2,7 +2,7 @@ name: habit_tracker_app
 description: "A scalable, production-ready offline-first Habit Tracker App built with Clean Architecture, Riverpod, sqflite, and go_router."
 publish_to: 'none'
 
-version: 1.1.0+2
+version: 1.2.0+3
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -59,6 +59,7 @@ dependencies:
 
   # Pustaka grafik interaktif
   fl_chart: ^0.68.0
+  google_fonts: ^8.1.0
 
 dev_dependencies:
   flutter_test:

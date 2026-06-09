@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 7, // Naikkan versi ke 7 untuk mendukung journal_entries & task tags
+      version: 8, // Naikkan versi ke 8 untuk mendukung frequency_config di habits
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -51,7 +51,8 @@ class DatabaseHelper {
         start_time TEXT,
         end_time TEXT,
         reminder_type TEXT NOT NULL DEFAULT 'notification',
-        alarm_sound TEXT
+        alarm_sound TEXT,
+        frequency_config TEXT
       )
     ''');
 
@@ -202,6 +203,12 @@ class DatabaseHelper {
       ''');
 
       await db.execute('CREATE INDEX IF NOT EXISTS idx_journal_date ON journal_entries (date)');
+    }
+
+    if (oldVersion < 8) {
+      if (!await _columnExists(db, 'habits', 'frequency_config')) {
+        await db.execute('ALTER TABLE habits ADD COLUMN frequency_config TEXT');
+      }
     }
   }
 

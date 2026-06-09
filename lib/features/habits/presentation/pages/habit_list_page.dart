@@ -574,7 +574,7 @@ class _StatsBannerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final habitsAsync = ref.watch(habitListProvider);
+    final habitsAsync = ref.watch(todayHabitsProvider);
 
     return habitsAsync.maybeWhen(
       data: (habits) {
@@ -733,7 +733,7 @@ class _EmptyHabitState extends StatelessWidget {
 void _showFilterSortBottomSheet(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(
     context: context,
-    backgroundColor: const Color(0xff111318),
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
