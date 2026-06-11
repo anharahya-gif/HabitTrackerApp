@@ -31,8 +31,13 @@ class _VaultDashboardPageState extends ConsumerState<VaultDashboardPage> {
 
   @override
   void deactivate() {
-    // Automatically lock when leaving the vault dashboard for security
-    ref.read(vaultSecurityProvider.notifier).lock();
+    // Capture the notifier reference synchronously, then defer the state
+    // modification to after the current frame to avoid Riverpod's
+    // "Cannot modify provider while widget tree is building" error.
+    final notifier = ref.read(vaultSecurityProvider.notifier);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifier.lock();
+    });
     super.deactivate();
   }
 
