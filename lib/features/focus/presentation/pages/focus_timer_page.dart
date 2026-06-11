@@ -52,7 +52,11 @@ class FocusTimerPage extends ConsumerWidget {
                         onPressed: () {
                           timerNotifier.stopTimer();
                           Navigator.pop(context); // Close dialog
-                          context.pop(); // Go back
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/home');
+                          }
                         },
                         child: Text(
                           'Keluar',
@@ -63,7 +67,11 @@ class FocusTimerPage extends ConsumerWidget {
                   ),
                 );
               } else {
-                context.pop();
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/home');
+                }
               }
             },
           ),

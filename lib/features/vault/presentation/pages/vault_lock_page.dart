@@ -308,8 +308,6 @@ class _VaultLockPageState extends ConsumerState<VaultLockPage> {
   }
 
   Widget _buildNumpadBottomRow(VaultState securityState) {
-    final theme = Theme.of(context);
-
     Widget leftButton;
     // Show biometric button only if enabled, supported and not creating a PIN
     if (securityState.isBiometricSupported && securityState.isBiometricEnabled && !_isCreatingPin) {
