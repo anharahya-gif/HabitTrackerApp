@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../widgets/urge_form_sheet.dart';
+import '../widgets/physical_challenge_tab.dart';
+import '../widgets/bubble_popper_tab.dart';
 import '../../domain/entities/urge_log.dart';
 import '../controllers/urge_log_controller.dart';
 import '../../../../shared/providers/vault_provider.dart';
@@ -226,7 +228,7 @@ class _VaultSosPageState extends ConsumerState<VaultSosPage> with TickerProvider
     final textSecondary = isDark ? Colors.white60 : Colors.black54;
 
     return DefaultTabController(
-      length: 2,
+      length: 4,
       child: Scaffold(
         backgroundColor: bgColor,
         body: Stack(
@@ -295,24 +297,45 @@ class _VaultSosPageState extends ConsumerState<VaultSosPage> with TickerProvider
                       ),
                     ),
                     child: TabBar(
+                      isScrollable: false,
                       tabs: const [
                         Tab(
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.spa_rounded, size: 18),
-                              SizedBox(width: 8),
-                              Text('Latihan Napas'),
+                              Icon(Icons.spa_rounded, size: 16),
+                              SizedBox(width: 5),
+                              Text('Napas'),
                             ],
                           ),
                         ),
                         Tab(
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.analytics_rounded, size: 18),
-                              SizedBox(width: 8),
-                              Text('Analisis Hasrat'),
+                              Icon(Icons.fitness_center_rounded, size: 16),
+                              SizedBox(width: 5),
+                              Text('Tantangan'),
+                            ],
+                          ),
+                        ),
+                        Tab(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.bubble_chart_rounded, size: 16),
+                              SizedBox(width: 5),
+                              Text('Bubble'),
+                            ],
+                          ),
+                        ),
+                        Tab(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.analytics_rounded, size: 16),
+                              SizedBox(width: 5),
+                              Text('Analisis'),
                             ],
                           ),
                         ),
@@ -322,7 +345,7 @@ class _VaultSosPageState extends ConsumerState<VaultSosPage> with TickerProvider
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xffb388ff).withOpacity(0.2),
+                            color: const Color(0xffb388ff).withValues(alpha: 0.2),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -330,10 +353,11 @@ class _VaultSosPageState extends ConsumerState<VaultSosPage> with TickerProvider
                       ),
                       labelColor: const Color(0xffb388ff),
                       unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
-                      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
                       indicatorSize: TabBarIndicatorSize.tab,
                       dividerColor: Colors.transparent,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                     ),
                   ),
 
@@ -344,7 +368,11 @@ class _VaultSosPageState extends ConsumerState<VaultSosPage> with TickerProvider
                       children: [
                         // Tab 1: Breathing Exercise
                         _buildBreathingTab(isDark, accentColor, bgColor),
-                        // Tab 2: Trigger Analytics
+                        // Tab 2: Physical Challenge
+                        PhysicalChallengeTab(isDark: isDark),
+                        // Tab 3: Bubble Popper
+                        BubblePopperTab(isDark: isDark),
+                        // Tab 4: Trigger Analytics
                         _buildAnalyticsTab(isDark, cardColor, accentPurple, textPrimary, textSecondary),
                       ],
                     ),
