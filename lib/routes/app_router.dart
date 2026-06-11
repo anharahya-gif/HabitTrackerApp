@@ -17,6 +17,7 @@ import '../shared/widgets/main_layout_shell.dart';
 import '../features/vault/presentation/pages/vault_lock_page.dart';
 import '../features/vault/presentation/pages/vault_dashboard_page.dart';
 import '../features/vault/presentation/pages/vault_sos_page.dart';
+import '../features/vault/presentation/pages/my_why_page.dart';
 
 /// Konfigurasi navigasi global menggunakan go_router.
 /// Menyediakan rute:
@@ -110,6 +111,13 @@ class AppRouter {
             name: 'vault_dashboard',
             builder: (BuildContext context, GoRouterState state) {
               return const VaultDashboardPage();
+            },
+          ),
+          GoRoute(
+            path: '/vault/my-why',
+            name: 'vault_my_why',
+            builder: (BuildContext context, GoRouterState state) {
+              return const MyWhyPage();
             },
           ),
         ],

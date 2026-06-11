@@ -19,6 +19,19 @@ class VaultSosPage extends ConsumerStatefulWidget {
 }
 
 class _VaultSosPageState extends ConsumerState<VaultSosPage> with TickerProviderStateMixin {
+  static const List<String> _affirmations = [
+    'Ingatlah mengapa Anda memulai. Rasa sesal setelah menyerah jauh lebih menyakitkan daripada rasa lelah saat bertahan.',
+    'Disiplin adalah memilih antara apa yang Anda inginkan saat ini dan apa yang paling Anda impikan di masa depan.',
+    'Setiap kali Anda menolak dorongan itu, Anda sedang membangun kembali sirkuit otak Anda menjadi lebih kuat.',
+    'Kebebasan sejati bukanlah menuruti semua hasrat kita, melainkan kemampuan mutlak untuk mengendalikan diri sendiri.',
+    'Satu keputusan kecil saat ini menentukan arah hidup Anda di masa depan. Pilih pertarungan ini, menangkan hari ini.',
+    'Hasrat itu seperti ombak. Ia akan datang, memuncak, lalu mereda. Anda hanya perlu berdiri kokoh saat ombak itu lewat.',
+    'Anda tidak kehilangan apa pun ketika menolak PMO. Anda sedang mendapatkan kembali kendali atas hidup Anda sendiri.',
+    'Kekuatan tidak berasal dari kemampuan fisik, tetapi dari kemauan yang tidak tergoyahkan.',
+    'Setiap detik Anda bertahan dalam ketenangan adalah kemenangan besar bagi masa depan Anda.',
+    'Tenangkan pikiran Anda. Tarik napas perlahan. Hari ini Anda berkuasa penuh atas tindakan Anda sendiri.'
+  ];
+
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late AnimationController _pulseController;
@@ -28,10 +41,27 @@ class _VaultSosPageState extends ConsumerState<VaultSosPage> with TickerProvider
   int _secondsRemaining = 4;
   int _cycleCount = 0;
   Timer? _timer;
+  String _currentAffirmation = '';
+
+  String _getRandomAffirmation() {
+    final random = DateTime.now().millisecond % _affirmations.length;
+    return _affirmations[random];
+  }
+
+  void _refreshAffirmation() {
+    setState(() {
+      String next;
+      do {
+        next = _getRandomAffirmation();
+      } while (next == _currentAffirmation && _affirmations.length > 1);
+      _currentAffirmation = next;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    _currentAffirmation = _getRandomAffirmation();
     
     // Scale animation for breathing (4 seconds for inhale/exhale)
     _animationController = AnimationController(
@@ -227,7 +257,7 @@ class _VaultSosPageState extends ConsumerState<VaultSosPage> with TickerProvider
                         ),
                       ),
                       
-                      const SizedBox(height: 60),
+                      const SizedBox(height: 24),
 
                       // Animated Breathing Circle
                       AnimatedBuilder(
@@ -289,7 +319,56 @@ class _VaultSosPageState extends ConsumerState<VaultSosPage> with TickerProvider
                         },
                       ),
 
-                      const SizedBox(height: 60),
+                      const SizedBox(height: 24),
+
+                      // Affirmation / Contemplation Card
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.02),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: accentColor.withOpacity(0.15),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.format_quote_rounded,
+                                color: accentColor.withOpacity(0.5),
+                                size: 28,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  _currentAffirmation,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontStyle: FontStyle.italic,
+                                    height: 1.5,
+                                    color: isDark ? Colors.white70 : Colors.black87,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                icon: Icon(Icons.refresh_rounded, size: 20, color: accentColor),
+                                tooltip: 'Ganti Motivasi',
+                                constraints: const BoxConstraints(),
+                                padding: EdgeInsets.zero,
+                                onPressed: _refreshAffirmation,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
 
                       // Cycle count indicator
                       Container(

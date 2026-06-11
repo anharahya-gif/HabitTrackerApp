@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 9, // Naikkan versi ke 9 untuk mendukung is_private di habits
+      version: 10, // Naikkan versi ke 10 untuk mendukung tabel vision_items
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -117,6 +117,22 @@ class DatabaseHelper {
 
     // Index untuk pencarian jurnal berdasarkan tanggal
     await db.execute('CREATE INDEX idx_journal_date ON journal_entries (date)');
+
+    // 6. Membuat tabel vision_items untuk Papan Visi / My Why
+    await _createVisionItemsTable(db);
+  }
+
+  Future<void> _createVisionItemsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE vision_items (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        color INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<bool> _columnExists(Database db, String tableName, String columnName) async {
@@ -216,6 +232,10 @@ class DatabaseHelper {
       if (!await _columnExists(db, 'habits', 'is_private')) {
         await db.execute('ALTER TABLE habits ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0');
       }
+    }
+
+    if (oldVersion < 10) {
+      await _createVisionItemsTable(db);
     }
   }
 
