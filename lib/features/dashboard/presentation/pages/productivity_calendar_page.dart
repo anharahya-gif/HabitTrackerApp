@@ -35,7 +35,11 @@ class ProductivityCalendarPage extends ConsumerWidget {
       canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) {
         if (didPop) return;
-        context.go('/home');
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
       },
       child: Scaffold(
         backgroundColor: isDark ? AppTheme.darkBg : AppTheme.lightBg,

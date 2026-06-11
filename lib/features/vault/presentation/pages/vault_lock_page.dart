@@ -132,18 +132,26 @@ class _VaultLockPageState extends ConsumerState<VaultLockPage> {
       titleText = _isConfirmingPin ? 'Konfirmasi PIN Baru Anda' : 'Buat PIN 4-Digit Baru';
     }
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : Colors.black87),
-          onPressed: () {
-            context.go('/home');
-          },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: bgColor,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back_rounded, color: isDark ? Colors.white : Colors.black87),
+            onPressed: () => Navigator.maybePop(context),
+          ),
         ),
-      ),
       body: Stack(
         children: [
           // Background ambient lights
@@ -294,7 +302,7 @@ class _VaultLockPageState extends ConsumerState<VaultLockPage> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildNumpadRow(List<int> numbers) {

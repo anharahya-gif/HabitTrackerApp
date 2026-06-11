@@ -73,8 +73,18 @@ class _VaultDashboardPageState extends ConsumerState<VaultDashboardPage> {
 
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return Theme(
-      data: theme.copyWith(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
+      },
+      child: Theme(
+        data: theme.copyWith(
         colorScheme: theme.colorScheme.copyWith(
           primary: accentPurple,
           secondary: accentPurple,
@@ -519,7 +529,7 @@ class _VaultDashboardPageState extends ConsumerState<VaultDashboardPage> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   void _showResetConfirmDialog(BuildContext context) {

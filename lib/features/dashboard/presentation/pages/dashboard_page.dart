@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/theme/app_theme.dart';
@@ -39,8 +40,15 @@ final dashboardTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
 });
 
 /// Halaman Dashboard Utama (Terpadu & Compact)
-class DashboardPage extends ConsumerWidget {
+class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends ConsumerState<DashboardPage> {
+  DateTime? _lastPressedAt;
 
   String _formatCurrentDate(DateTime now) {
     final weekdays = [
@@ -75,7 +83,7 @@ class DashboardPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final habitsAsync = ref.watch(todayHabitsProvider);
     final tasksAsync = ref.watch(todayTasksProvider);
     final authState = ref.watch(authControllerProvider);
@@ -109,7 +117,25 @@ class DashboardPage extends ConsumerWidget {
 
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        final now = DateTime.now();
+        if (_lastPressedAt == null ||
+            now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
+          _lastPressedAt = now;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tekan sekali lagi untuk keluar'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
       body: SafeArea(
         child: RefreshIndicator(
@@ -413,7 +439,7 @@ class DashboardPage extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Tambah Baru'),
       ),
-    );
+    ));
   }
 }
 

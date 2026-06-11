@@ -25,56 +25,61 @@ class FocusTimerPage extends ConsumerWidget {
         ? timerState.remainingSeconds / timerState.totalSeconds
         : 1.0;
 
-    return Theme(
-      data: theme.copyWith(
-        scaffoldBackgroundColor: const Color(0xff0b0d12), // Extra deep immersive dark
-      ),
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white70),
-            onPressed: () {
-              if (timerState.isRunning) {
-                // Show confirm exit
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Keluar dari Mode Fokus?'),
-                    content: const Text('Timer fokus Anda masih berjalan. Keluar akan membatalkan sesi fokus ini.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Batal'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          timerNotifier.stopTimer();
-                          Navigator.pop(context); // Close dialog
-                          if (context.canPop()) {
-                            context.pop();
-                          } else {
-                            context.go('/home');
-                          }
-                        },
-                        child: Text(
-                          'Keluar',
-                          style: TextStyle(color: theme.colorScheme.error),
-                        ),
-                      ),
-                    ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) return;
+        if (timerState.isRunning) {
+          final shouldExit = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Keluar dari Mode Fokus?'),
+              content: const Text('Timer fokus Anda masih berjalan. Keluar akan membatalkan sesi fokus ini.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Batal'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    timerNotifier.stopTimer();
+                    Navigator.pop(context, true);
+                  },
+                  child: Text(
+                    'Keluar',
+                    style: TextStyle(color: theme.colorScheme.error),
                   ),
-                );
-              } else {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/home');
-                }
-              }
-            },
-          ),
+                ),
+              ],
+            ),
+          );
+          if (shouldExit == true && context.mounted) {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          }
+        } else {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/home');
+          }
+        }
+      },
+      child: Theme(
+        data: theme.copyWith(
+          scaffoldBackgroundColor: const Color(0xff0b0d12), // Extra deep immersive dark
+        ),
+        child: Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white70),
+              onPressed: () => Navigator.maybePop(context),
+            ),
           title: const Text(
             'Mode Fokus',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
@@ -325,7 +330,7 @@ class FocusTimerPage extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ));
   }
 }
 

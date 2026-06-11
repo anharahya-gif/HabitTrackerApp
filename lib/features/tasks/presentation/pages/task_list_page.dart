@@ -92,13 +92,17 @@ class _TaskListPageState extends ConsumerState<TaskListPage> {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return PopScope(
-      canPop: !_isSelectionMode,
+      canPop: false,
       onPopInvokedWithResult: (bool didPop, dynamic result) {
         if (didPop) return;
         if (_isSelectionMode) {
           _exitSelectionMode();
         } else {
-          context.go('/home');
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/home');
+          }
         }
       },
       child: Scaffold(

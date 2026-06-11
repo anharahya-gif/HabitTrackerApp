@@ -106,7 +106,17 @@ class _JournalPageState extends ConsumerState<JournalPage> {
     final todayEntry = ref.watch(todayJournalProvider);
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
+      },
+      child: Scaffold(
       drawer: isMobile ? const CollapsibleSidebar(isDrawer: true) : null,
       body: SafeArea(
         child: Row(
@@ -405,7 +415,7 @@ class _JournalPageState extends ConsumerState<JournalPage> {
               label: const Text('Catat Mood'),
             )
           : null,
-    );
+    ));
   }
 }
 
