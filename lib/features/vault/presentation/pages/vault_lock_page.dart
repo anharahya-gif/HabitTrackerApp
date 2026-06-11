@@ -17,27 +17,46 @@ class _VaultLockPageState extends ConsumerState<VaultLockPage> {
   bool _isConfirmingPin = false;
   String _tempPin = '';
   String _errorMessage = '';
+  bool _biometricAttempted = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final securityState = ref.read(vaultSecurityProvider);
-      
-      // If already unlocked, go straight to dashboard
-      if (securityState.isUnlocked) {
-        context.go('/vault/dashboard');
-        return;
-      }
-
-      if (!securityState.hasPin) {
-        setState(() {
-          _isCreatingPin = true;
-        });
-      } else if (securityState.isBiometricEnabled && securityState.isBiometricSupported) {
-        _triggerBiometricAuth();
-      }
+      _performInitialCheck();
     });
+  }
+
+  void _performInitialCheck() {
+    if (!mounted) return;
+    final securityState = ref.read(vaultSecurityProvider);
+
+    // If already unlocked, go straight to dashboard
+    if (securityState.isUnlocked) {
+      context.go('/vault/dashboard');
+      return;
+    }
+
+    if (!securityState.hasPin) {
+      setState(() {
+        _isCreatingPin = true;
+      });
+    } else {
+      // Try biometric immediately if state is already ready
+      _tryAutoBiometric(securityState);
+    }
+  }
+
+  /// Attempts biometric auth automatically if enabled and not yet attempted.
+  /// Called both from initState and when the provider state updates (to handle
+  /// the async _init() race condition in VaultSecurityNotifier).
+  void _tryAutoBiometric(VaultState state) {
+    if (_biometricAttempted || _isCreatingPin) return;
+    if (state.isUnlocked) return;
+    if (state.isBiometricEnabled && state.isBiometricSupported && state.hasPin) {
+      _biometricAttempted = true;
+      _triggerBiometricAuth();
+    }
   }
 
   Future<void> _triggerBiometricAuth() async {
@@ -117,6 +136,12 @@ class _VaultLockPageState extends ConsumerState<VaultLockPage> {
     final securityState = ref.watch(vaultSecurityProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    // Listen for state changes to catch when async _init() completes
+    // and biometric support info becomes available
+    ref.listen<VaultState>(vaultSecurityProvider, (previous, next) {
+      _tryAutoBiometric(next);
+    });
 
     // Deep lavender/amethyst palette for lock screen
     final bgColor = isDark 
