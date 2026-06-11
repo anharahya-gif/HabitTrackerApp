@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 10, // Naikkan versi ke 10 untuk mendukung tabel vision_items
+      version: 11, // Naikkan versi ke 11 untuk mendukung tabel urge_logs
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -120,6 +120,9 @@ class DatabaseHelper {
 
     // 6. Membuat tabel vision_items untuk Papan Visi / My Why
     await _createVisionItemsTable(db);
+
+    // 7. Membuat tabel urge_logs untuk Catatan Pemicu / Urge Log
+    await _createUrgeLogsTable(db);
   }
 
   Future<void> _createVisionItemsTable(Database db) async {
@@ -131,6 +134,20 @@ class DatabaseHelper {
         color INTEGER NOT NULL,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createUrgeLogsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE urge_logs (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        severity INTEGER NOT NULL,
+        trigger_emotion TEXT NOT NULL,
+        notes TEXT,
+        created_at TEXT NOT NULL
       )
     ''');
   }
@@ -236,6 +253,10 @@ class DatabaseHelper {
 
     if (oldVersion < 10) {
       await _createVisionItemsTable(db);
+    }
+
+    if (oldVersion < 11) {
+      await _createUrgeLogsTable(db);
     }
   }
 

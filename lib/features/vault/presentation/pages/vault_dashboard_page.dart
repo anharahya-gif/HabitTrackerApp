@@ -30,10 +30,10 @@ class _VaultDashboardPageState extends ConsumerState<VaultDashboardPage> {
   }
 
   @override
-  void dispose() {
+  void deactivate() {
     // Automatically lock when leaving the vault dashboard for security
     ref.read(vaultSecurityProvider.notifier).lock();
-    super.dispose();
+    super.deactivate();
   }
 
   @override
@@ -348,8 +348,8 @@ class _VaultDashboardPageState extends ConsumerState<VaultDashboardPage> {
                   ),
                 ),
 
-                const SizedBox(height: 28),
-                
+                const SizedBox(height: 24),
+
                 // 2. Private Habits Title Section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

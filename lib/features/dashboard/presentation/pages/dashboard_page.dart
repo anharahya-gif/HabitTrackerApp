@@ -132,6 +132,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
           );
         } else {
+          ScaffoldMessenger.of(context).clearSnackBars();
           SystemNavigator.pop();
         }
       },

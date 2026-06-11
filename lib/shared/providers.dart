@@ -35,6 +35,7 @@ import '../features/journal/domain/repositories/journal_repository.dart';
 import '../core/services/backup_service.dart';
 import '../core/services/google_drive_service.dart';
 import '../features/vault/data/datasources/vision_local_data_source.dart';
+import '../features/vault/data/datasources/urge_local_data_source.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -84,6 +85,11 @@ final journalLocalDataSourceProvider = Provider<JournalLocalDataSource>((ref) {
 final visionLocalDataSourceProvider = Provider<VisionLocalDataSource>((ref) {
   final dbHelper = ref.watch(databaseHelperProvider);
   return VisionLocalDataSource(dbHelper);
+});
+
+final urgeLocalDataSourceProvider = Provider<UrgeLocalDataSource>((ref) {
+  final dbHelper = ref.watch(databaseHelperProvider);
+  return UrgeLocalDataSource(dbHelper);
 });
 
 final trackingRemoteDataSourceProvider = Provider<TrackingRemoteDataSource>((ref) {
