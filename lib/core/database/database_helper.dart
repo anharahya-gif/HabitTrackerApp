@@ -223,7 +223,10 @@ class DatabaseHelper {
   Future<void> close() async {
     final db = _database;
     if (db != null) {
-      await db.close();
+      try {
+        await db.close();
+      } catch (_) {}
+      _database = null;
     }
   }
 }

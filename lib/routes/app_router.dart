@@ -28,7 +28,11 @@ import '../features/vault/presentation/pages/vault_sos_page.dart';
 class AppRouter {
   AppRouter._();
 
+  static final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
+
   static final GoRouter router = GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/',
     debugLogDiagnostics: true,
     routes: <RouteBase>[
@@ -40,6 +44,7 @@ class AppRouter {
         },
       ),
       ShellRoute(
+        navigatorKey: shellNavigatorKey,
         builder: (BuildContext context, GoRouterState state, Widget child) {
           return MainLayoutShell(child: child);
         },
@@ -165,4 +170,25 @@ class AppRouter {
       ),
     ),
   );
+}
+
+class DailioBackButtonDispatcher extends RootBackButtonDispatcher {
+  DailioBackButtonDispatcher();
+
+  @override
+  Future<bool> didPopRoute() async {
+    final shellNav = AppRouter.shellNavigatorKey.currentState;
+    if (shellNav != null) {
+      final didPop = await shellNav.maybePop();
+      if (didPop) return true;
+    }
+
+    final rootNav = AppRouter.rootNavigatorKey.currentState;
+    if (rootNav != null) {
+      final didPop = await rootNav.maybePop();
+      if (didPop) return true;
+    }
+
+    return false;
+  }
 }

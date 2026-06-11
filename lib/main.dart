@@ -10,10 +10,14 @@ import 'shared/theme/theme_settings_provider.dart';
 import 'shared/providers.dart';
 import 'core/utils/notification_service.dart';
 import 'core/utils/home_widget_service.dart';
+import 'core/database/database_helper.dart';
 
 void main() async {
   // Memastikan framework binding Flutter diinisialisasi sebelum proses sinkronisasi database dijalankan
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Reset koneksi database jika proses Android di-reuse setelah keluar lewat SystemNavigator.pop()
+  await DatabaseHelper.instance.close();
   
   // Inisialisasi SharedPreferences secara awal
   final sharedPrefs = await SharedPreferences.getInstance();
@@ -56,10 +60,12 @@ class MyApp extends ConsumerStatefulWidget {
 
 class _MyAppState extends ConsumerState<MyApp> {
   StreamSubscription<String>? _alarmSubscription;
+  late final RootBackButtonDispatcher _backButtonDispatcher;
 
   @override
   void initState() {
     super.initState();
+    _backButtonDispatcher = DailioBackButtonDispatcher();
     // Mendengarkan pemicu alarm saat aplikasi aktif (foreground/background)
     _alarmSubscription = NotificationService.alarmTriggerController.stream.listen((habitId) {
       if (mounted) {
@@ -67,6 +73,9 @@ class _MyAppState extends ConsumerState<MyApp> {
         AppRouter.router.go('/alarm/$habitId');
       }
     });
+
+    // Reset rute ke Splash Screen saat aplikasi baru diinisialisasi
+    AppRouter.router.go('/');
   }
 
   @override
@@ -104,7 +113,10 @@ class _MyAppState extends ConsumerState<MyApp> {
       themeMode: themeMode,
 
       // Integrasi Navigasi GoRouter Terpusat
-      routerConfig: AppRouter.router,
+      routeInformationProvider: AppRouter.router.routeInformationProvider,
+      routeInformationParser: AppRouter.router.routeInformationParser,
+      routerDelegate: AppRouter.router.routerDelegate,
+      backButtonDispatcher: _backButtonDispatcher,
     );
   }
 }
