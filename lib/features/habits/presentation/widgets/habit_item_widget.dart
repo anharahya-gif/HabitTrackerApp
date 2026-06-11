@@ -94,93 +94,97 @@ class HabitItemWidget extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                        borderRadius: BorderRadius.circular(4),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  physics: const BouncingScrollPhysics(),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          habit.category,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          ),
+                                        ),
                                       ),
-                                      child: Text(
-                                        habit.category,
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        habit.type == 'daily'
+                                            ? 'Harian'
+                                            : habit.type == 'weekly'
+                                                ? 'Mingguan'
+                                                : habit.type == 'specific_days'
+                                                    ? 'Hari Spesifik'
+                                                    : habit.type == 'interval'
+                                                        ? 'Interval'
+                                                        : habit.type == 'flexible_weekly'
+                                                            ? 'Kustom Mingguan'
+                                                            : habit.type,
                                         style: TextStyle(
                                           fontSize: 11,
                                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      habit.type == 'daily'
-                                          ? 'Harian'
-                                          : habit.type == 'weekly'
-                                              ? 'Mingguan'
-                                              : habit.type == 'specific_days'
-                                                  ? 'Hari Spesifik'
-                                                  : habit.type == 'interval'
-                                                      ? 'Interval'
-                                                      : habit.type == 'flexible_weekly'
-                                                          ? 'Kustom Mingguan'
-                                                          : habit.type,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                    if (habit.startTime != null && habit.endTime != null) ...[
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '•',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                      if (habit.startTime != null && habit.endTime != null) ...[
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '•',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Icon(
-                                        Icons.access_time_rounded,
-                                        size: 11,
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        _formatDuration(habit.startTime!, habit.endTime!),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                          fontWeight: FontWeight.w600,
+                                        const SizedBox(width: 6),
+                                        Icon(
+                                          Icons.access_time_rounded,
+                                          size: 11,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
                                         ),
-                                      ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          _formatDuration(habit.startTime!, habit.endTime!),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                      if (habit.reminderTime != null) ...[
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '•',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Icon(
+                                          habit.reminderType == 'alarm'
+                                              ? Icons.alarm_rounded
+                                              : Icons.notifications_none_rounded,
+                                          size: 11,
+                                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          habit.reminderTime!,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
                                     ],
-                                    if (habit.reminderTime != null) ...[
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '•',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Icon(
-                                        habit.reminderType == 'alarm'
-                                            ? Icons.alarm_rounded
-                                            : Icons.notifications_none_rounded,
-                                        size: 11,
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        habit.reminderTime!,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
+                                  ),
                                 ),
                               ],
                             ),
