@@ -186,6 +186,82 @@ class _VaultDashboardPageState extends ConsumerState<VaultDashboardPage> {
                   ),
                 ),
                 
+                const SizedBox(height: 16),
+
+                // SOS Panic Button / Intervensi Darurat
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      context.push('/vault/sos');
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Ink(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xff4a148c), // Deep violet
+                            Color(0xff880e4f), // Dark maroon/pink
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.redAccent.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.bolt_rounded,
+                              color: Colors.amberAccent,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'SOS - Butuh Bantuan Instan?',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Rasakan urge kuat? Klik di sini untuk latihan penenang napas.',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            color: Colors.white70,
+                            size: 14,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
                 const SizedBox(height: 28),
                 
                 // 2. Private Habits Title Section
