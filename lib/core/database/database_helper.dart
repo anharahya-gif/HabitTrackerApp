@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 11, // Naikkan versi ke 11 untuk mendukung tabel urge_logs
+      version: 12, // Naikkan versi ke 12 untuk mendukung tabel Ibadah Hub
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -123,6 +123,12 @@ class DatabaseHelper {
 
     // 7. Membuat tabel urge_logs untuk Catatan Pemicu / Urge Log
     await _createUrgeLogsTable(db);
+
+    // 8. Membuat tabel prayer_times untuk Jadwal Shalat
+    await _createPrayerTimesTable(db);
+
+    // 9. Membuat tabel ibadah_logs untuk Catatan Ibadah Harian
+    await _createIbadahLogsTable(db);
   }
 
   Future<void> _createVisionItemsTable(Database db) async {
@@ -148,6 +154,42 @@ class DatabaseHelper {
         trigger_emotion TEXT NOT NULL,
         notes TEXT,
         created_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createPrayerTimesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE prayer_times (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        city TEXT NOT NULL,
+        fajr TEXT NOT NULL,
+        dhuhr TEXT NOT NULL,
+        asr TEXT NOT NULL,
+        maghrib TEXT NOT NULL,
+        isha TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createIbadahLogsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE ibadah_logs (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL UNIQUE,
+        subuh TEXT NOT NULL DEFAULT 'belum',
+        dzuhur TEXT NOT NULL DEFAULT 'belum',
+        ashar TEXT NOT NULL DEFAULT 'belum',
+        maghrib TEXT NOT NULL DEFAULT 'belum',
+        isya TEXT NOT NULL DEFAULT 'belum',
+        quran_pages INTEGER NOT NULL DEFAULT 0,
+        dhikr_count INTEGER NOT NULL DEFAULT 0,
+        duha INTEGER NOT NULL DEFAULT 0,
+        tahajjud INTEGER NOT NULL DEFAULT 0,
+        sedekah INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL
       )
     ''');
   }
@@ -257,6 +299,11 @@ class DatabaseHelper {
 
     if (oldVersion < 11) {
       await _createUrgeLogsTable(db);
+    }
+
+    if (oldVersion < 12) {
+      await _createPrayerTimesTable(db);
+      await _createIbadahLogsTable(db);
     }
   }
 

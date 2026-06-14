@@ -190,6 +190,19 @@ class CollapsibleSidebar extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   _SidebarMenuItem(
+                    icon: Icons.mosque_outlined,
+                    activeIcon: Icons.mosque_rounded,
+                    label: 'Ibadah Hub',
+                    route: '/ibadah',
+                    isActive: location == '/ibadah',
+                    isCollapsed: isCollapsed && !isDrawer,
+                    onTap: () {
+                      context.go('/ibadah');
+                      if (isDrawer) Navigator.of(context).pop();
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  _SidebarMenuItem(
                     icon: Icons.person_outline_rounded,
                     activeIcon: Icons.person_rounded,
                     label: 'Profil Saya',
