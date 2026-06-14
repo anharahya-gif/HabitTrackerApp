@@ -607,7 +607,7 @@ class _IbadahHubPageState extends ConsumerState<IbadahHubPage> {
         crossAxisCount: 5,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 0.72,
+        childAspectRatio: 0.55,
       ),
       itemCount: 5,
       itemBuilder: (context, index) {
@@ -677,7 +677,7 @@ class _IbadahHubPageState extends ConsumerState<IbadahHubPage> {
                       ),
               borderRadius: BorderRadius.circular(20),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -705,7 +705,7 @@ class _IbadahHubPageState extends ConsumerState<IbadahHubPage> {
 
                     // Central Status Icon / Lock
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
                         color: isLocked
                             ? Colors.black12
@@ -714,7 +714,7 @@ class _IbadahHubPageState extends ConsumerState<IbadahHubPage> {
                       ),
                       child: Icon(
                         isLocked ? Icons.lock_outline_rounded : statusIcon,
-                        size: 20,
+                        size: 18,
                         color: isLocked
                             ? textSecondary.withValues(alpha: 0.3)
                             : (prayer['status'] == 'belum'
