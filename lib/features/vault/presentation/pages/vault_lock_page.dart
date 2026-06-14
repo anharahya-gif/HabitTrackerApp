@@ -176,6 +176,17 @@ class _VaultLockPageState extends ConsumerState<VaultLockPage>
     final isDark = theme.brightness == Brightness.dark;
 
     ref.listen<VaultState>(vaultSecurityProvider, (previous, next) {
+      // Fix race condition: _init() is async, so _performInitialCheck may
+      // have wrongly set _isCreatingPin=true because hasPin was still false.
+      // When _init finishes and hasPin becomes true, correct the state.
+      if (_isCreatingPin && next.hasPin && _currentInput.isEmpty && _tempPin.isEmpty) {
+        // _init just finished and user actually HAS a pin — abort create-pin mode
+        setState(() {
+          _isCreatingPin = false;
+          _isConfirmingPin = false;
+        });
+      }
+
       if (!_showBiometricView &&
           !_isCreatingPin &&
           next.isBiometricEnabled &&
