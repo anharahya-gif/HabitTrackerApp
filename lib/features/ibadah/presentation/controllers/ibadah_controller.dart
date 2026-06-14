@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../shared/providers.dart';
+import '../../../../core/database/database_helper.dart';
 import '../../../dashboard/presentation/controllers/gamification_controller.dart';
 import '../../data/datasources/ibadah_local_data_source.dart';
 import '../../data/models/ibadah_log_model.dart';

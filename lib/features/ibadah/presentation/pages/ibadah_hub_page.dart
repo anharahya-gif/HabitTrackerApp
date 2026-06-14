@@ -444,7 +444,7 @@ class _IbadahHubPageState extends ConsumerState<IbadahHubPage> {
                       style: GoogleFonts.outfit(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.white : (isDark ? Colors.whited1 : Colors.black87),
+                        color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
                       ),
                     ),
                   ],
@@ -542,7 +542,7 @@ class _IbadahHubPageState extends ConsumerState<IbadahHubPage> {
                   info['countdown'] ?? '00:00',
                   style: GoogleFonts.outfit(
                     fontSize: 16,
-                    fontWeight: FontWeight.extrabold,
+                    fontWeight: FontWeight.w800,
                     color: isDark ? accentGold : const Color(0xff996515),
                   ),
                 ),
@@ -1487,7 +1487,7 @@ class _IbadahHubPageState extends ConsumerState<IbadahHubPage> {
           const SizedBox(height: 4),
           Text(
             value,
-            style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.black, color: textPrimary),
+            style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w900, color: textPrimary),
           ),
           const SizedBox(height: 2),
           Text(
@@ -1630,7 +1630,7 @@ class _IbadahHubPageState extends ConsumerState<IbadahHubPage> {
         'desc': 'Tilawah Al-Quran selama 7 hari berbeda',
         'icon': Icons.auto_stories_rounded,
         'unlocked': quranDays >= 7,
-        'color': Colors.emerald,
+        'color': Colors.teal,
       },
       {
         'id': 'shalat_7d',
