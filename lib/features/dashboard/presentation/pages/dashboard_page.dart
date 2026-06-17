@@ -19,6 +19,8 @@ import '../widgets/dailio_garden_widget.dart';
 import '../widgets/level_up_dialog.dart';
 import '../controllers/gamification_controller.dart';
 import '../../../journal/presentation/controllers/journal_controller.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../ayah/presentation/widgets/ayah_favorites_dialog.dart';
 
 /// Provider reaktif untuk memperbarui jam setiap 10 detik secara background di Dashboard
 final dashboardTimeProvider = StreamProvider.autoDispose<DateTime>((ref) {
@@ -237,47 +239,62 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                               ),
                             ],
                           ),
-                          GestureDetector(
-                            onTap: () => context.push('/profile'),
-                            child: authState.maybeWhen(
-                              data: (user) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: user.isAuthenticated 
-                                          ? AppTheme.statusDone 
-                                          : Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                                      width: 1.5,
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 20),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => const AyahFavoritesDialog(),
+                                  );
+                                },
+                                tooltip: 'Ayat Favorit',
+                              ),
+                              const SizedBox(width: 4),
+                              GestureDetector(
+                                onTap: () => context.push('/profile'),
+                                child: authState.maybeWhen(
+                                  data: (user) {
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: user.isAuthenticated 
+                                              ? AppTheme.statusDone 
+                                              : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 20,
+                                        backgroundColor: const Color(0xff1a1d24),
+                                        backgroundImage: user.photoUrl != null 
+                                            ? NetworkImage(user.photoUrl!) 
+                                            : null,
+                                        child: user.photoUrl == null
+                                            ? const Icon(Icons.person_outline, size: 20)
+                                            : null,
+                                      ),
+                                    );
+                                  },
+                                  orElse: () => Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: const CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: Colors.transparent,
+                                      child: Icon(Icons.person_outline, size: 20),
                                     ),
                                   ),
-                                  child: CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor: const Color(0xff1a1d24),
-                                    backgroundImage: user.photoUrl != null 
-                                        ? NetworkImage(user.photoUrl!) 
-                                        : null,
-                                    child: user.photoUrl == null
-                                        ? const Icon(Icons.person_outline, size: 20)
-                                        : null,
-                                  ),
-                                );
-                              },
-                              orElse: () => Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: Colors.transparent,
-                                  child: Icon(Icons.person_outline, size: 20),
                                 ),
                               ),
-                            ),
+                            ],
                           )
                         ],
                       ),
@@ -287,6 +304,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       const DailioGardenWidget(),
                       const SizedBox(height: 16),
                       const _DashboardMoodBanner(),
+                      const SizedBox(height: 20),
+                      const _DashboardIbadahHubQuickAction(),
                     ],
                   ),
                 ),
@@ -1144,3 +1163,106 @@ class _DashboardMoodBanner extends ConsumerWidget {
     );
   }
 }
+
+class _DashboardIbadahHubQuickAction extends StatelessWidget {
+  const _DashboardIbadahHubQuickAction();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    const primaryEmerald = Color(0xff0b3b24);
+    const accentGold = Color(0xffd4af37);
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [primaryEmerald.withOpacity(0.85), primaryEmerald.withOpacity(0.6)]
+              : [const Color(0xffe6f0ea), const Color(0xffd0e2d5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark
+              ? accentGold.withOpacity(0.3)
+              : const Color(0xff0b3b24).withOpacity(0.15),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black26 : Colors.black12,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => context.go('/ibadah'),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.08)
+                        : const Color(0xff0b3b24).withOpacity(0.08),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? accentGold.withOpacity(0.4) : const Color(0xff0b3b24).withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.mosque_rounded,
+                    color: accentGold,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ibadah Hub',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xff0b3b24),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Pantau shalat 5 waktu, dzikir, tilawah Quran & sunnah hari ini.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: isDark ? accentGold : const Color(0xff0b3b24),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+

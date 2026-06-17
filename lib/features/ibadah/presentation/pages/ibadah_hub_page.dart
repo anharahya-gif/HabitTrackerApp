@@ -11,6 +11,7 @@ import '../../../../shared/widgets/collapsible_sidebar.dart';
 import '../../domain/entities/ibadah_log.dart';
 import '../../domain/entities/prayer_time.dart';
 import '../controllers/ibadah_controller.dart';
+import '../../../ayah/presentation/widgets/ayah_of_the_day_card.dart';
 
 class IbadahHubPage extends ConsumerStatefulWidget {
   const IbadahHubPage({super.key});
@@ -268,10 +269,20 @@ class _IbadahHubPageState extends ConsumerState<IbadahHubPage> {
                                 _buildCountdownPanel(state, isDark, textPrimary, textSecondary),
                                 const SizedBox(height: 24),
 
+                                // Ayat of the Day
+                                const AyahOfTheDayCard(),
+                                const SizedBox(height: 24),
+
                                 // 3. Grid Shalat Fardhu
                                 _buildSectionTitle('Shalat Fardhu 5 Waktu', textPrimary),
                                 const SizedBox(height: 12),
                                 _buildPrayerGrid(state, controller, glassColor, textPrimary, textSecondary),
+                                const SizedBox(height: 28),
+
+                                // Kumpulan Doa & Dzikir
+                                _buildSectionTitle('Doa & Dzikir Harian', textPrimary),
+                                const SizedBox(height: 12),
+                                _buildDoaDhikrQuickActions(context, glassColor, textPrimary, textSecondary, isMobile),
                                 const SizedBox(height: 28),
 
                                 // 4. Quran Tracker & Tasbih (Row jika desktop, Column jika mobile)
@@ -1775,4 +1786,132 @@ class _IbadahHubPageState extends ConsumerState<IbadahHubPage> {
       },
     );
   }
+
+  Widget _buildDoaDhikrQuickActions(
+    BuildContext context,
+    Color glassColor,
+    Color textPrimary,
+    Color textSecondary,
+    bool isMobile,
+  ) {
+    const accentGold = Color(0xffd4af37);
+
+    Widget buildCard({
+      required String title,
+      required String subtitle,
+      required IconData icon,
+      required VoidCallback onTap,
+    }) {
+      return Container(
+        decoration: BoxDecoration(
+          color: glassColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.black.withValues(alpha: 0.05),
+            width: 1,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: accentGold.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      icon,
+                      color: accentGold,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: textSecondary,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: textSecondary.withValues(alpha: 0.5),
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (isMobile) {
+      return Column(
+        children: [
+          buildCard(
+            title: 'Dzikir Setelah Shalat 📿',
+            subtitle: 'Panduan interaktif & counter dzikir fardhu',
+            icon: Icons.grain_rounded,
+            onTap: () => context.push('/ibadah/dzikir-setelah-shalat'),
+          ),
+          const SizedBox(height: 12),
+          buildCard(
+            title: 'Kumpulan Doa Harian 🤲',
+            subtitle: 'Doa perlindungan, kelapangan & ibadah',
+            icon: Icons.menu_book_rounded,
+            onTap: () => context.push('/ibadah/kumpulan-doa'),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: buildCard(
+            title: 'Dzikir Setelah Shalat 📿',
+            subtitle: 'Panduan interaktif & counter dzikir fardhu',
+            icon: Icons.grain_rounded,
+            onTap: () => context.push('/ibadah/dzikir-setelah-shalat'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: buildCard(
+            title: 'Kumpulan Doa Harian 🤲',
+            subtitle: 'Doa perlindungan, kelapangan & ibadah',
+            icon: Icons.menu_book_rounded,
+            onTap: () => context.push('/ibadah/kumpulan-doa'),
+          ),
+        ),
+      ],
+    );
+  }
 }
+

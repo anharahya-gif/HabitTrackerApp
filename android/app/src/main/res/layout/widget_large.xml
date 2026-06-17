@@ -102,4 +102,53 @@
         android:textSize="12sp"
         android:visibility="gone" />
 
+    <!-- Divider -->
+    <FrameLayout
+        android:id="@+id/div_ayah"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:background="@color/widget_progress_bg"
+        android:visibility="gone" />
+
+    <!-- Ayah Section -->
+    <LinearLayout
+        android:id="@+id/layout_ayah"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tv_ayah_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📖 Ayat Hari Ini"
+            android:textColor="@color/widget_accent"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_ayah_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Loading..."
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/tv_ayah_ref"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:text="QS. —:—"
+            android:textColor="@color/widget_text_secondary"
+            android:textSize="10sp"
+            android:textStyle="italic" />
+    </LinearLayout>
+
 </LinearLayout>

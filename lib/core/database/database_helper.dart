@@ -21,7 +21,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       pathString,
-      version: 12, // Naikkan versi ke 12 untuk mendukung tabel Ibadah Hub
+      version: 14, // Naikkan versi ke 14 untuk mendukung Fitur Doa Favorit
       onCreate: _createDB,
       onConfigure: _configureDB,
       onUpgrade: _upgradeDB,
@@ -129,6 +129,15 @@ class DatabaseHelper {
 
     // 9. Membuat tabel ibadah_logs untuk Catatan Ibadah Harian
     await _createIbadahLogsTable(db);
+
+    // 10. Membuat tabel daily_ayah untuk Ayat Hari Ini
+    await _createDailyAyahTable(db);
+
+    // 11. Membuat tabel favorite_ayahs untuk Ayat Favorit
+    await _createFavoriteAyahsTable(db);
+
+    // 12. Membuat tabel favorite_doas untuk Doa Favorit
+    await _createFavoriteDoasTable(db);
   }
 
   Future<void> _createVisionItemsTable(Database db) async {
@@ -190,6 +199,48 @@ class DatabaseHelper {
         tahajjud INTEGER NOT NULL DEFAULT 0,
         sedekah INTEGER NOT NULL DEFAULT 0,
         updated_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createDailyAyahTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE daily_ayah (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        surah_number INTEGER NOT NULL,
+        ayah_number INTEGER NOT NULL,
+        surah_name TEXT NOT NULL,
+        arabic_text TEXT NOT NULL,
+        translation TEXT NOT NULL,
+        audio_url TEXT,
+        tajwid_json TEXT,
+        created_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createFavoriteAyahsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE favorite_ayahs (
+        id TEXT PRIMARY KEY,
+        surah_number INTEGER NOT NULL,
+        ayah_number INTEGER NOT NULL,
+        surah_name TEXT NOT NULL,
+        arabic_text TEXT NOT NULL,
+        translation TEXT NOT NULL,
+        audio_url TEXT,
+        tajwid_json TEXT,
+        saved_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createFavoriteDoasTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE favorite_doas (
+        doa_id TEXT PRIMARY KEY,
+        saved_at TEXT NOT NULL
       )
     ''');
   }
@@ -304,6 +355,15 @@ class DatabaseHelper {
     if (oldVersion < 12) {
       await _createPrayerTimesTable(db);
       await _createIbadahLogsTable(db);
+    }
+
+    if (oldVersion < 13) {
+      await _createDailyAyahTable(db);
+      await _createFavoriteAyahsTable(db);
+    }
+
+    if (oldVersion < 14) {
+      await _createFavoriteDoasTable(db);
     }
   }
 

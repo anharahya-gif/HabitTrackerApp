@@ -19,6 +19,8 @@ import '../features/vault/presentation/pages/vault_dashboard_page.dart';
 import '../features/vault/presentation/pages/vault_sos_page.dart';
 import '../features/vault/presentation/pages/my_why_page.dart';
 import '../features/ibadah/presentation/pages/ibadah_hub_page.dart';
+import '../features/ibadah/presentation/pages/prayers_after_shalat_page.dart';
+import '../features/ibadah/presentation/pages/prayer_collection_page.dart';
 
 /// Konfigurasi navigasi global menggunakan go_router.
 /// Menyediakan rute:
@@ -127,6 +129,22 @@ class AppRouter {
             builder: (BuildContext context, GoRouterState state) {
               return const IbadahHubPage();
             },
+            routes: <RouteBase>[
+              GoRoute(
+                path: 'dzikir-setelah-shalat',
+                name: 'dzikir_setelah_shalat',
+                builder: (BuildContext context, GoRouterState state) {
+                  return const PrayersAfterShalatPage();
+                },
+              ),
+              GoRoute(
+                path: 'kumpulan-doa',
+                name: 'kumpulan_doa',
+                builder: (BuildContext context, GoRouterState state) {
+                  return const PrayerCollectionPage();
+                },
+              ),
+            ],
           ),
         ],
       ),

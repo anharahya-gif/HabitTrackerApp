@@ -16,6 +16,8 @@ class HomeWidgetService {
   static const String _keyCompleted = 'completed';
   static const String _keyTotal = 'total';
   static const String _keyHabitsJson = 'habits_json';
+  static const String _keyAyahTranslation = 'ayah_translation';
+  static const String _keyAyahReference = 'ayah_reference';
 
   /// Inisialisasi home widget (panggil sekali saat app startup)
   static Future<void> initialize() async {
@@ -109,5 +111,18 @@ class HomeWidgetService {
       name: 'DailioWidgetLarge',
       androidName: 'DailioWidgetLarge',
     );
+  }
+
+  /// Menyimpan data Ayat Hari Ini ke SharedPreferences dan memicu refresh widget.
+  static Future<void> updateAyahData(String translation, String reference) async {
+    if (kIsWeb) return;
+    try {
+      await HomeWidget.saveWidgetData<String>(_keyAyahTranslation, translation);
+      await HomeWidget.saveWidgetData<String>(_keyAyahReference, reference);
+      await _triggerWidgetUpdate();
+      debugPrint('HomeWidgetService: Ayah data updated - $reference');
+    } catch (e) {
+      debugPrint('HomeWidgetService: Gagal memperbarui widget data ayat - $e');
+    }
   }
 }

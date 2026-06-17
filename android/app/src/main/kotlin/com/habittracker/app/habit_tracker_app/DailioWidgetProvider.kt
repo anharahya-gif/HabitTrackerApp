@@ -175,6 +175,19 @@ class DailioWidgetProvider : AppWidgetProvider() {
                 }
             }
 
+            // Render Ayah of the day
+            val ayahText = prefs.getString("ayah_translation", null)
+            val ayahRef = prefs.getString("ayah_reference", null)
+            if (!ayahText.isNullOrEmpty() && !ayahRef.isNullOrEmpty()) {
+                views.setTextViewText(R.id.tv_ayah_text, "\"$ayahText\"")
+                views.setTextViewText(R.id.tv_ayah_ref, ayahRef)
+                views.setViewVisibility(R.id.layout_ayah, View.VISIBLE)
+                views.setViewVisibility(R.id.div_ayah, View.VISIBLE)
+            } else {
+                views.setViewVisibility(R.id.layout_ayah, View.GONE)
+                views.setViewVisibility(R.id.div_ayah, View.GONE)
+            }
+
             // Tap to open app
             views.setOnClickPendingIntent(R.id.widget_medium_root, createOpenAppIntent(context))
 
@@ -221,6 +234,19 @@ class DailioWidgetProvider : AppWidgetProvider() {
                 
                 // Set PendingIntent template to launch the app when list items are clicked
                 views.setPendingIntentTemplate(R.id.lv_habits, createOpenAppIntent(context))
+            }
+
+            // Render Ayah of the day
+            val ayahText = prefs.getString("ayah_translation", null)
+            val ayahRef = prefs.getString("ayah_reference", null)
+            if (!ayahText.isNullOrEmpty() && !ayahRef.isNullOrEmpty()) {
+                views.setTextViewText(R.id.tv_ayah_text, "\"$ayahText\"")
+                views.setTextViewText(R.id.tv_ayah_ref, ayahRef)
+                views.setViewVisibility(R.id.layout_ayah, View.VISIBLE)
+                views.setViewVisibility(R.id.div_ayah, View.VISIBLE)
+            } else {
+                views.setViewVisibility(R.id.layout_ayah, View.GONE)
+                views.setViewVisibility(R.id.div_ayah, View.GONE)
             }
 
             // Tap to open app

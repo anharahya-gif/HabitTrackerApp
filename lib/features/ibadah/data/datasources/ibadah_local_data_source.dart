@@ -79,4 +79,39 @@ class IbadahLocalDataSource {
       whereArgs: [log.id],
     );
   }
+
+  // ─── FAVORITE PRayers (DOA) ────────────────────────────────────────────────
+
+  /// Mengambil semua ID doa yang difavoritkan.
+  Future<List<String>> getFavoriteDoaIds() async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'favorite_doas',
+      columns: ['doa_id'],
+    );
+    return maps.map((map) => map['doa_id'] as String).toList();
+  }
+
+  /// Menambahkan doa ke dalam daftar favorit.
+  Future<void> addFavoriteDoa(String doaId) async {
+    final db = await _dbHelper.database;
+    await db.insert(
+      'favorite_doas',
+      {
+        'doa_id': doaId,
+        'saved_at': DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Menghapus doa dari daftar favorit.
+  Future<void> removeFavoriteDoa(String doaId) async {
+    final db = await _dbHelper.database;
+    await db.delete(
+      'favorite_doas',
+      where: 'doa_id = ?',
+      whereArgs: [doaId],
+    );
+  }
 }
